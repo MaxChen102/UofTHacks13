@@ -1,2 +1,6 @@
 #!/usr/bin/env ruby
+
+# Default Rails dev server port to 3001 so it doesn't conflict with the frontend (often 3000).
+ENV["PORT"] ||= "3001"
+
 exec "./bin/rails", "server", *ARGV
