@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   namespace :api do
     # Resource endpoints
     resources :pins, only: [:create, :show, :index, :update, :destroy]
+    resources :collections, only: [:create, :index, :update, :destroy]
 
     # Webhook endpoints
     namespace :webhooks do
