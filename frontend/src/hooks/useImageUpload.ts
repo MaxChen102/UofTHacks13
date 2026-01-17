@@ -127,4 +127,3 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
     validate,
   };
 }
-
