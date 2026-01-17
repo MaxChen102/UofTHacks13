@@ -11,6 +11,8 @@ Rails.application.routes.draw do
     resources :pins, only: [:create, :show, :index, :update, :destroy]
     resources :collections, only: [:create, :index, :update, :destroy]
 
+    post "vision/ocr", to: "vision#ocr"
+
     # Webhook endpoints
     namespace :webhooks do
       post 'clerk', to: 'clerk#create'

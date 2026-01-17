@@ -1,5 +1,7 @@
 source "https://rubygems.org"
 
+gem 'google-cloud-vision'
+
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 7.1.0"
 # Use the Puma web server [https://github.com/puma/puma]
@@ -33,6 +35,8 @@ gem 'jwt'
 gem 'mongoid', '~> 8.1'
 
 gem 'sidekiq', '~> 7.0'
+
+gem 'dotenv'
 
 gem 'dotenv-rails', groups: [:development, :test]
 
