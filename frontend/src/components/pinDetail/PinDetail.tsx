@@ -1,5 +1,6 @@
 import type { Pin } from "@/lib/sampleData";
 import { PinDetailHeader } from "@/components/pinDetail/PinDetailHeader";
+import { PinAiSummaryCard } from "@/components/pinDetail/PinAiSummaryCard";
 import { PinLinkCard } from "@/components/pinDetail/PinLinkCard";
 import { PinLocationCard } from "@/components/pinDetail/PinLocationCard";
 import { PinNoteCard } from "@/components/pinDetail/PinNoteCard";
@@ -30,6 +31,16 @@ export function PinDetail({ pin }: { pin: Pin }) {
         <PinSection title="Notes">
           <PinNoteCard text={pin.notes} />
         </PinSection>
+
+        {pin.aiSuggestedRating && (pin.aiDescription || pin.aiSummary) ? (
+          <PinSection title="AI Summary">
+            <PinAiSummaryCard
+              ratingKey={`pin:${pin.id}`}
+              aiSuggestedRating={pin.aiSuggestedRating}
+              description={pin.aiDescription ?? pin.aiSummary ?? ""}
+            />
+          </PinSection>
+        ) : null}
 
         <PinSection title="Locations">
           <PinLocationCard emoji={pin.emoji} location={pin.location} />

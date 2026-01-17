@@ -26,6 +26,9 @@ export type Pin = {
   id: string;
   title: string;
   emoji: string;
+  aiSummary?: string;
+  aiSuggestedRating?: number;
+  aiDescription?: string;
   links: PinLink[];
   notes: string;
   location: PinLocation;
@@ -85,6 +88,11 @@ export const pins: Pin[] = [
     id: "alo",
     title: "Alo Restaurant",
     emoji: "🍽️",
+    aiSummary:
+      "Upscale French fine dining with tasting menus and a polished, special-occasion vibe. Book ahead and expect a more formal dress code.",
+    aiSuggestedRating: 4.6,
+    aiDescription:
+      "A polished tasting-menu experience with top-tier service and a special-occasion vibe. Best if you plan ahead and enjoy fine dining.",
     links: [
       {
         id: "reserve",
