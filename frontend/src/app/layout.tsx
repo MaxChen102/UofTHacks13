@@ -22,7 +22,7 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignInUrl="/" afterSignUpUrl="/" afterSignOutUrl="/sign-in">
       <html lang="en">
         <body className={`${arimo.variable} antialiased`}>
           <CollectionsProvider>{children}</CollectionsProvider>
