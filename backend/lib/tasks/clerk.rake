@@ -1,7 +1,7 @@
 # lib/tasks/clerk.rake
 namespace :clerk do
   desc "Sync a single user from Clerk by Clerk ID (e.g., rake clerk:sync_user[user_2abc123def])"
-  task :sync_user, [:clerk_id] => :environment do |t, args|
+  task :sync_user, [ :clerk_id ] => :environment do |t, args|
     unless args[:clerk_id]
       puts "ERROR: Clerk ID required. Usage: rake clerk:sync_user[user_2abc123def]"
       exit 1
@@ -10,7 +10,8 @@ namespace :clerk do
     clerk_id = args[:clerk_id]
     puts "Syncing user with Clerk ID: #{clerk_id}..."
 
-    sync_result = SyncUserFromClerkService.new(clerk_id).call
+    # Force sync for manual rake tasks (always update from Clerk)
+    sync_result = SyncUserFromClerkService.new(clerk_id, force: true).call
 
     if sync_result.success?
       user = sync_result.data
@@ -27,7 +28,7 @@ namespace :clerk do
   end
 
   desc "Sync all users from Clerk to MongoDB (with safety limit)"
-  task :sync_all_users => :environment do
+  task sync_all_users: :environment do
     puts "Starting bulk user sync from Clerk..."
     puts "=" * 60
 
@@ -51,10 +52,11 @@ namespace :clerk do
         puts "Fetched #{users.length} users from Clerk"
 
         users.each do |clerk_user|
-          clerk_id = clerk_user['id']
+          clerk_id = clerk_user["id"]
           total_fetched += 1
 
-          sync_result = SyncUserFromClerkService.new(clerk_id).call
+          # Force sync for bulk operations (always update from Clerk)
+          sync_result = SyncUserFromClerkService.new(clerk_id, force: true).call
 
           if sync_result.success?
             total_synced += 1
@@ -99,7 +101,7 @@ namespace :clerk do
   end
 
   desc "Audit users - list Clerk users not in MongoDB"
-  task :audit_missing_users => :environment do
+  task audit_missing_users: :environment do
     puts "Auditing user sync status..."
     puts "=" * 60
 
@@ -118,12 +120,12 @@ namespace :clerk do
         break if users.empty?
 
         users.each do |clerk_user|
-          clerk_id = clerk_user['id']
+          clerk_id = clerk_user["id"]
           total_checked += 1
 
           # Check if user exists in MongoDB
           unless User.exists?(clerk_id: clerk_id)
-            email = clerk_user.dig('email_addresses', 0, 'email_address') || 'unknown'
+            email = clerk_user.dig("email_addresses", 0, "email_address") || "unknown"
             missing_users << { clerk_id: clerk_id, email: email }
           end
 

@@ -35,11 +35,11 @@ module Authenticatable
   end
 
   def extract_token_from_header
-    auth_header = request.headers['Authorization']
+    auth_header = request.headers["Authorization"]
     return nil unless auth_header
 
     # Extract token from "Bearer <token>" format
-    auth_header.split(' ').last if auth_header.start_with?('Bearer ')
+    auth_header.split(" ").last if auth_header.start_with?("Bearer ")
   end
 
   def decode_and_set_user(token)
@@ -62,7 +62,7 @@ module Authenticatable
     end
 
     # Extract Clerk user ID from 'sub' claim
-    clerk_id = decoded_token.first['sub']
+    clerk_id = decoded_token.first["sub"]
 
     unless clerk_id
       Rails.logger.error("Token missing 'sub' claim. Token payload: #{decoded_token.first.inspect}")
@@ -70,7 +70,7 @@ module Authenticatable
     end
 
     # Verify token issuer matches your Clerk instance (basic security check)
-    issuer = decoded_token.first['iss']
+    issuer = decoded_token.first["iss"]
     expected_issuer = "https://internal-racer-63.clerk.accounts.dev"
 
     if issuer != expected_issuer
@@ -80,7 +80,7 @@ module Authenticatable
     end
 
     # Check token expiration
-    exp = decoded_token.first['exp']
+    exp = decoded_token.first["exp"]
     if exp && Time.at(exp) < Time.now
       Rails.logger.warn("Token expired at #{Time.at(exp)}")
       render json: { error: "Token expired" }, status: :unauthorized
@@ -95,11 +95,13 @@ module Authenticatable
       @current_user = nil
     end
 
+    # Auto-sync only if user doesn't exist
+    # The sync service uses timestamp-based conditional updates to avoid unnecessary writes
     unless @current_user
       Rails.logger.warn("User not found in MongoDB for clerk_id: #{clerk_id}")
       Rails.logger.info("Attempting auto-sync from Clerk API...")
 
-      # Auto-heal: sync user from Clerk
+      # Auto-heal: sync user from Clerk (service will check timestamps to avoid unnecessary updates)
       sync_result = SyncUserFromClerkService.new(clerk_id).call
 
       if sync_result.success?
