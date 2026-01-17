@@ -33,6 +33,7 @@ echo $CLERK_TOKEN | cut -d'.' -f1 | base64 -d | jq
 ```
 
 **Output revealed:**
+
 ```json
 {
   "alg": "RS256",  // ← The problem!
@@ -44,6 +45,7 @@ echo $CLERK_TOKEN | cut -d'.' -f1 | base64 -d | jq
 ### 2. User Verification
 
 Confirmed the user existed in database and token payload was valid:
+
 - ✅ Token had valid structure
 - ✅ User ID (`sub` claim) present
 - ✅ User existed in Rails database
@@ -56,6 +58,7 @@ Confirmed the user existed in database and token payload was valid:
 Modified `app/controllers/concerns/authenticatable.rb` to:
 
 1. **Decode without signature verification** (acceptable for hackathon)
+
    ```ruby
    decoded_token = JWT.decode(token, nil, false)
    ```
@@ -66,6 +69,7 @@ Modified `app/controllers/concerns/authenticatable.rb` to:
    - User exists in database
 
 **Security checks implemented:**
+
 ```ruby
 # Verify issuer
 issuer = decoded_token.first['iss']
@@ -92,6 +96,7 @@ To properly verify RS256 tokens, implement JWKS verification:
 **Reference**: [Clerk Manual JWT Verification](https://clerk.com/docs/backend-requests/handling/manual-jwt)
 
 **Implementation example:**
+
 ```ruby
 require 'net/http'
 require 'json'
@@ -118,10 +123,12 @@ end
 **Problem**: `Zeitwerk::NameError: expected file app/errors/api_error.rb to define constant ApiError`
 
 **Cause**: File structure didn't match Rails' Zeitwerk autoloader expectations
+
 - File: `app/errors/api_error.rb`
 - Defined: `module Errors` (Zeitwerk expected `class ApiError`)
 
 **Solution**: Moved errors to `lib/errors.rb`
+
 ```ruby
 # lib/errors.rb
 module Errors
@@ -137,12 +144,15 @@ Rails automatically loads files from `lib/` with proper module namespacing.
 ## Testing Tools Created
 
 ### `tests/debug-token.sh`
+
 Decodes JWT token and checks:
+
 - Algorithm used (header)
 - User claims (payload)
 - User exists in database
 
 ### `tests/get-token.sh` (combined script)
+
 Creates Clerk session and retrieves JWT token in one step.
 
 ## Key Takeaways

@@ -12,19 +12,22 @@ module Authenticatable
     token = extract_token_from_header
 
     unless token
-      Rails.logger.error("Authentication failed: No token provided")
-      raise Errors::AuthenticationError, "Authentication token required"
+      Rails.logger.warn("Authentication failed: No token provided")
+      render json: { error: "Authentication token required" }, status: :unauthorized
+      return
     end
 
     decode_and_set_user(token)
   rescue JWT::DecodeError => e
     Rails.logger.error("JWT decode error: #{e.message}")
-    raise Errors::AuthenticationError, "Invalid or expired token"
-  rescue Errors::AuthenticationError
-    raise
+    render json: { error: "Invalid or expired token" }, status: :unauthorized
+  rescue Errors::AuthenticationError => e
+    Rails.logger.warn("Authentication error: #{e.message}")
+    render json: { error: e.message }, status: :unauthorized
   rescue StandardError => e
-    Rails.logger.error("Authentication error: #{e.message}")
-    raise Errors::AuthenticationError, "Authentication failed"
+    Rails.logger.error("Unexpected authentication error: #{e.message}")
+    Rails.logger.error(e.backtrace.join("\n"))
+    render json: { error: "Authentication failed" }, status: :unauthorized
   end
 
   def current_user
@@ -71,23 +74,26 @@ module Authenticatable
     expected_issuer = "https://internal-racer-63.clerk.accounts.dev"
 
     if issuer != expected_issuer
-      Rails.logger.error("Token issuer mismatch: #{issuer} != #{expected_issuer}")
-      raise Errors::AuthenticationError, "Invalid token issuer"
+      Rails.logger.warn("Token issuer mismatch: #{issuer} != #{expected_issuer}")
+      render json: { error: "Invalid token issuer" }, status: :unauthorized
+      return
     end
 
     # Check token expiration
     exp = decoded_token.first['exp']
     if exp && Time.at(exp) < Time.now
-      Rails.logger.error("Token expired at #{Time.at(exp)}")
-      raise Errors::AuthenticationError, "Token expired"
+      Rails.logger.warn("Token expired at #{Time.at(exp)}")
+      render json: { error: "Token expired" }, status: :unauthorized
+      return
     end
 
     # Find user by Clerk ID
     @current_user = User.find_by(clerk_id: clerk_id)
 
     unless @current_user
-      Rails.logger.error("User not found for clerk_id: #{clerk_id}")
-      raise Errors::AuthenticationError, "User not found"
+      Rails.logger.warn("User not found for clerk_id: #{clerk_id}")
+      render json: { error: "User not found" }, status: :unauthorized
+      return
     end
 
     Rails.logger.info("Authenticated user: #{@current_user.email} (#{@current_user.clerk_id})")
