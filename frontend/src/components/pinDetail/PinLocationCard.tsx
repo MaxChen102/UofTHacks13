@@ -8,19 +8,30 @@ export function PinLocationCard({
   emoji: string;
   location: PinLocation;
 }) {
+  const mapsEmbedKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const embedSrc =
+    location.mapEmbedSrc ||
+    (mapsEmbedKey && location.placeId
+      ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(
+          mapsEmbedKey
+        )}&q=place_id:${encodeURIComponent(location.placeId)}`
+      : undefined);
+
   return (
     <div className="flex flex-col gap-3">
       <div className="overflow-hidden rounded-2xl bg-white shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]">
-        {location.mapEmbedSrc ? (
+        {embedSrc ? (
           <iframe
             title="Map"
-            src={location.mapEmbedSrc}
+            src={embedSrc}
             className="h-48 w-full"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
           />
         ) : (
-          <div className="h-48 w-full bg-white" />
+          <div className="flex h-48 w-full items-center justify-center bg-white text-sm text-[var(--muted-foreground)]">
+            Map preview unavailable (set <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> to enable).
+          </div>
         )}
       </div>
 

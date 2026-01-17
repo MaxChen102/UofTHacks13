@@ -5,6 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
+npm install
 npm run dev
 # or
 yarn dev
@@ -16,7 +17,25 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Google Places test (optional)
+
+The app includes a local API route at `/api/places` that uses `GOOGLE_MAPS_API_KEY` to look up a place by name.
+
+- **PowerShell example** (ensure the env vars are set in the SAME terminal that runs `npm run dev`):
+
+```powershell
+cd frontend
+$env:GOOGLE_MAPS_API_KEY="YOUR_SERVER_KEY"
+$env:NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="YOUR_BROWSER_EMBED_KEY"
+npm run dev
+```
+
+Then in another terminal:
+
+```powershell
+cd frontend
+node scripts/testPlaces.mjs "Nobu"
+```
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
