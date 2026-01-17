@@ -74,6 +74,7 @@
 - Configured environment for webhook secret and MongoDB Atlas
 - Set up ngrok host allowlist for webhook testing
 - Tested successfully with Clerk webhook events
+- Documented Clerk dashboard webhook setup (ngrok URL + user events)
 
 **Key Files:**
 
