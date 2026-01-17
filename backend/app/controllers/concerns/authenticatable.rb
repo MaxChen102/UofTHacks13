@@ -88,12 +88,31 @@ module Authenticatable
     end
 
     # Find user by Clerk ID
-    @current_user = User.find_by(clerk_id: clerk_id)
+    # Note: Mongoid may raise DocumentNotFound instead of returning nil
+    begin
+      @current_user = User.find_by(clerk_id: clerk_id)
+    rescue Mongoid::Errors::DocumentNotFound
+      @current_user = nil
+    end
 
     unless @current_user
-      Rails.logger.warn("User not found for clerk_id: #{clerk_id}")
-      render json: { error: "User not found" }, status: :unauthorized
-      return
+      Rails.logger.warn("User not found in MongoDB for clerk_id: #{clerk_id}")
+      Rails.logger.info("Attempting auto-sync from Clerk API...")
+
+      # Auto-heal: sync user from Clerk
+      sync_result = SyncUserFromClerkService.new(clerk_id).call
+
+      if sync_result.success?
+        @current_user = sync_result.data
+        Rails.logger.info("User auto-synced successfully: #{@current_user.email}")
+      else
+        Rails.logger.error("Auto-sync failed: #{sync_result.errors.join(', ')}")
+        render json: {
+          error: "User account sync failed. Please contact support.",
+          details: sync_result.errors
+        }, status: :service_unavailable
+        return
+      end
     end
 
     Rails.logger.info("Authenticated user: #{@current_user.email} (#{@current_user.clerk_id})")

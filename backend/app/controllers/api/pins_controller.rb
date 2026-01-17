@@ -3,7 +3,7 @@ module Api
   class PinsController < ApplicationController
     include Authenticatable
 
-    before_action :set_pin, only: [:show, :update, :destroy]
+    before_action :set_pin, only: [ :show, :update, :destroy ]
 
   # POST /api/pins
   def create
