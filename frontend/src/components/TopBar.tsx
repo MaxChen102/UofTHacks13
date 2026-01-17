@@ -1,7 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { UserIcon } from "@/components/icons";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from "@clerk/nextjs";
 
 function formatTime(d: Date) {
   const hh = String(d.getHours()).padStart(2, "0");
@@ -23,13 +29,36 @@ export function TopBar() {
         <div className="text-xs leading-4 text-[var(--muted-foreground)]">
           {formatTime(now)}
         </div>
-        <button
-          type="button"
-          className="inline-flex size-10 items-center justify-center rounded-full bg-[var(--surface-2)] text-[var(--muted-foreground)]"
-          aria-label="Account"
-        >
-          <UserIcon />
-        </button>
+        <SignedOut>
+          <div className="flex items-center gap-2">
+            <SignInButton mode="modal">
+              <button
+                type="button"
+                className="h-10 rounded-full border border-[var(--border)] bg-white px-4 text-xs font-bold text-[var(--foreground)]"
+              >
+                Sign in
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button
+                type="button"
+                className="h-10 rounded-full bg-black px-4 text-xs font-bold text-white"
+              >
+                Sign up
+              </button>
+            </SignUpButton>
+          </div>
+        </SignedOut>
+        <SignedIn>
+          <UserButton
+            appearance={{
+              elements: {
+                userButtonAvatarBox:
+                  "size-10 rounded-full bg-[var(--surface-2)]",
+              },
+            }}
+          />
+        </SignedIn>
       </div>
     </header>
   );
