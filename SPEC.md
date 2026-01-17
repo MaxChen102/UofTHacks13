@@ -1,8 +1,8 @@
-# 🍽️ Pin-It Hackathon Software Spec
+# 🍽️ Vibely Hackathon Software Spec
 
 ## 🎯 Project Overview
 
-**Name**: Pin-It
+**Name**: Vibely
 **Duration**: 2 days
 **Team**: 4 full-stack engineers
 **MVP**: Restaurant pins from screenshots

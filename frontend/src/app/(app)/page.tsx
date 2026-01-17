@@ -12,7 +12,7 @@ export default function Home() {
           </h2>
           <Link
             href="/pins"
-            className="text-sm font-bold leading-5 text-(--primary)"
+            className="text-sm font-bold leading-5 text-primary"
           >
             See All
           </Link>
@@ -61,7 +61,7 @@ export default function Home() {
           </h2>
           <Link
             href="/collections?create=1"
-            className="text-sm font-bold leading-5 text-(--primary)"
+            className="text-sm font-bold leading-5 text-primary"
           >
             Create New
           </Link>
@@ -77,7 +77,7 @@ export default function Home() {
               <div className="text-base font-bold leading-6 text-foreground">
                 {list.name}
               </div>
-              <div className="flex items-center gap-2 text-sm leading-5 text-(--muted-foreground)">
+              <div className="flex items-center gap-2 text-sm leading-5 text-muted-foreground">
                 <span>{list.savesLabel}</span>
                 <span className="text-base leading-6">›</span>
               </div>
@@ -86,9 +86,9 @@ export default function Home() {
 
           <Link
             href="/collections?create=1"
-            className="flex h-[68px] items-center justify-center gap-2 rounded-2xl border-2 border-(--border) bg-transparent text-(--muted-foreground)"
+            className="flex h-[68px] items-center justify-center gap-2 rounded-2xl border-2 border-border bg-transparent text-muted-foreground"
           >
-            <span className="inline-flex size-6 items-center justify-center rounded-full border-2 border-(--muted-foreground) text-lg leading-[18px]">
+            <span className="inline-flex size-6 items-center justify-center rounded-full border-2 border-muted-foreground text-lg leading-[18px]">
               +
             </span>
             <span className="text-base font-bold leading-6">
