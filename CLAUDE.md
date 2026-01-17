@@ -1,6 +1,8 @@
-# Pin-It Coding Guidelines
+# Coding Guidelines
 
 ## General Principles
+
+- Commit messages should be brief, high-level
 
 ### Clean Code Fundamentals
 

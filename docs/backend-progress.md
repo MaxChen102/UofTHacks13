@@ -1,7 +1,7 @@
 # Pin-It Backend Development Progress
 
 **Date**: January 17, 2026
-**Status**: Day 1 - Backend Core Setup Complete (Steps 1-2 of 4)
+**Status**: Day 1 - Backend Core Setup Complete (Steps 1-3 of 4)
 
 ---
 
@@ -60,29 +60,64 @@
 - `backend/app/models/collection.rb`
 - `backend/app/models/pin.rb`
 
+### Step 3: Clerk Webhook Integration (~1h) ✓
+
+**What was done:**
+
+- Created webhook authentication concern with Svix signature verification
+- Created `ClerkWebhookService` to handle user events
+- Implemented webhook controller at `POST /api/webhooks/clerk`
+- Added support for `user.created`, `user.updated`, `user.deleted` events
+- Configured routes and error handling
+- Created `Result` pattern for service responses
+- Created custom error classes (`Errors::WebhookError`)
+- Configured environment for webhook secret and MongoDB Atlas
+- Set up ngrok host allowlist for webhook testing
+- Tested successfully with Clerk webhook events
+
+**Key Files:**
+
+- `backend/app/controllers/api/webhooks/clerk_controller.rb`
+- `backend/app/controllers/concerns/webhook_authenticatable.rb`
+- `backend/app/services/clerk_webhook_service.rb`
+- `backend/app/services/concerns/result.rb`
+- `backend/app/errors/api_error.rb`
+- `backend/config/routes.rb` (updated with webhook route)
+- `backend/config/environments/development.rb` (ngrok hosts allowed)
+- `backend/config/environments/production.rb` (ALLOWED_HOSTS support)
+
+**Environment Variables Added:**
+
+- `CLERK_WEBHOOK_SECRET` - Webhook signing secret (starts with `whsec_`)
+- `ALLOWED_HOSTS` - Configurable allowed hosts for production
+- `MONGODB_URI` - Updated to use MongoDB Atlas with database name
+
 ---
 
 ## 🚧 Current State
 
 ### Services Running
 
-- ✅ MongoDB (local): `mongodb://localhost:27017` via Homebrew
+- ✅ MongoDB Atlas: `pin-it-cluster` (cloud database)
 - ✅ Rails app ready to start: `cd backend && rails server`
+- ✅ Webhook endpoint: `POST /api/webhooks/clerk` (tested with ngrok)
 
 ### Environment Setup
 
 ```bash
-# backend/.env (populated, keys need updating later)
-MONGODB_URI=mongodb://localhost:27017/pin_it_development
-CLERK_SECRET_KEY=your_clerk_secret_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
+# backend/.env (configured)
+MONGODB_URI=mongodb+srv://dbuser:***@pin-it-cluster.w5el2rl.mongodb.net/pin_it_production?retryWrites=true&w=majority
+CLERK_SECRET_KEY=sk_test_*** (API calls to Clerk)
+CLERK_WEBHOOK_SECRET=whsec_*** (webhook signature verification)
+GEMINI_API_KEY=*** (configured)
 GOOGLE_CUSTOM_SEARCH_API_KEY=your_google_search_api_key_here
 GOOGLE_CUSTOM_SEARCH_ENGINE_ID=your_search_engine_id_here
-SNOWFLAKE_ACCOUNT=your_account_here
-SNOWFLAKE_USER=your_user_here
-SNOWFLAKE_PASSWORD=your_password_here
-UPLOADTHING_SECRET=your_uploadthing_secret_here
+SNOWFLAKE_ACCOUNT=ymeuuxx-vm37601
+SNOWFLAKE_USER=racheldeng
+SNOWFLAKE_PRIVATE_KEY_PATH=../snowflake_key.p8
+UPLOADTHING_TOKEN=*** (configured)
 REDIS_URL=redis://localhost:6379/0
+ALLOWED_HOSTS=yourapp.com,api.yourapp.com (for production)
 ```
 
 ### Ruby/Rails Versions
@@ -94,32 +129,6 @@ REDIS_URL=redis://localhost:6379/0
 ---
 
 ## ⏭️ Next Steps (Engineer 1: Backend Core)
-
-### Step 3: Clerk Webhook Integration (~1h)
-
-**Objective**: Sync Clerk users to MongoDB automatically
-
-**Tasks:**
-
-1. Create webhook endpoint: `POST /api/webhooks/clerk`
-2. Create service: `app/services/clerk_webhook_service.rb`
-3. Implement user sync logic:
-   - On `user.created` event → Create User in MongoDB
-   - On `user.updated` event → Update User in MongoDB
-   - On `user.deleted` event → Delete User in MongoDB
-4. Add webhook verification (JWT signature check)
-5. Configure routes in `config/routes.rb`
-6. Test with Clerk webhook events
-
-**Files to create:**
-
-- `app/controllers/api/webhooks/clerk_controller.rb`
-- `app/services/clerk_webhook_service.rb`
-
-**Reference:**
-
-- [Clerk Webhooks Docs](https://clerk.com/docs/integrations/webhooks)
-- [Clerk Rails Integration](https://clerk.com/docs/quickstarts/ruby-on-rails)
 
 ### Step 4: Basic CRUD Endpoints (~2h)
 
@@ -164,7 +173,7 @@ REDIS_URL=redis://localhost:6379/0
 
 - [x] Rails 7 API setup with mongoid (2h)
 - [x] User, Pin, Collection models (1h)
-- [ ] Clerk webhook integration (1h)
+- [x] Clerk webhook integration (1h)
 - [ ] Basic CRUD endpoints (2h)
 
 ### Engineer 2: AI Agent Pipeline
@@ -334,6 +343,6 @@ gem list                 # Show installed gems
 
 ---
 
-**Last Updated**: 2026-01-17 00:15 EST
-**Progress**: 2/4 steps complete for Engineer 1 (Backend Core)
-**Next Task**: Implement Clerk webhook integration
+**Last Updated**: 2026-01-17 01:50 EST
+**Progress**: 3/4 steps complete for Engineer 1 (Backend Core)
+**Next Task**: Implement basic CRUD endpoints for Pins and Collections
