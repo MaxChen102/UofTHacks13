@@ -2,3 +2,5 @@
 *.p8
 *.pub
 tests/*.sh
+*.code-workspace
+.vscode/
