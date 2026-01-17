@@ -48,4 +48,8 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Ruby LSP for IDE features [https://github.com/Shopify/ruby-lsp]
+  gem "ruby-lsp-rails", require: false
+  gem "ruby-lsp", require: false
 end
