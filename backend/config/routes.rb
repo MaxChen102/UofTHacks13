@@ -7,6 +7,10 @@ Rails.application.routes.draw do
 
   # API routes
   namespace :api do
+    # Resource endpoints
+    resources :pins, only: [:create, :show, :index, :update, :destroy]
+
+    # Webhook endpoints
     namespace :webhooks do
       post 'clerk', to: 'clerk#create'
     end
