@@ -1,5 +1,4 @@
-import { PinDetail } from "@/components/pinDetail/PinDetail";
-import { getPinById, pins } from "@/lib/sampleData";
+import { PinDetailClient } from "@/app/pins/[id]/PinDetailClient";
 
 export default async function PinDetailPage({
   params,
@@ -7,8 +6,7 @@ export default async function PinDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const pin = getPinById(id) ?? pins[0];
 
-  return <PinDetail pin={pin} />;
+  return <PinDetailClient id={id} />;
 }
 

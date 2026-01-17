@@ -89,12 +89,62 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
         validate(file);
 
         const res = await startUpload([file]);
+        if (!res || (Array.isArray(res) && res.length === 0)) {
+          // UploadThing can return an empty array if server-side auth/env fails.
+          // Provide a helpful message and a dev-friendly fallback so the app stays usable.
+          const hint =
+            "UploadThing returned an empty response. This usually means UploadThing env vars are missing " +
+            "(UPLOADTHING_SECRET / UPLOADTHING_APP_ID) or the /api/uploadthing route is failing auth. " +
+            "Check your Next.js server logs and ensure you're signed in.";
+
+          // DEV FALLBACK: use a local data URL so the pin flow can continue without UploadThing configured.
+          // This is not suitable for production.
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error("Failed to read file"));
+            reader.onload = () => resolve(String(reader.result));
+            reader.readAsDataURL(file);
+          });
+
+          const out: UploadedImage = {
+            url: dataUrl,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+          };
+
+          setUploaded(out);
+          setStatus("success");
+          setError(hint);
+          return out;
+        }
         const first = (res ?? [])[0] as any;
 
-        const url: string | undefined = first?.url ?? first?.ufsUrl;
-        const key: string | undefined = first?.key;
+        // UploadThing response shape can vary by version and router settings.
+        // Common shapes:
+        // - { url, key, ... }
+        // - { ufsUrl, key, ... }
+        // - { serverData: { url, key }, ... }
+        // - { data: { url, key }, ... }
+        const url: string | undefined =
+          first?.url ??
+          first?.ufsUrl ??
+          first?.fileUrl ??
+          first?.serverData?.url ??
+          first?.data?.url;
+        const key: string | undefined =
+          first?.key ?? first?.serverData?.key ?? first?.data?.key;
 
-        if (!url) throw new Error("Upload succeeded but no URL was returned");
+        if (!url) {
+          const topKeys = first && typeof first === "object" ? Object.keys(first) : [];
+          const hint =
+            topKeys.length > 0
+              ? `Upload response keys: ${topKeys.join(", ")}`
+              : "Upload response was empty.";
+          throw new Error(
+            `Upload succeeded but no URL was returned. ${hint} (Check UPLOADTHING_SECRET/UPLOADTHING_APP_ID and server logs.)`
+          );
+        }
 
         const out: UploadedImage = {
           url,
