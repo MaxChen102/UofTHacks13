@@ -1,4 +1,4 @@
-# app/errors/api_error.rb
+# lib/errors.rb
 module Errors
   class ApiError < StandardError; end
   class WebhookError < ApiError; end

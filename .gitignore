@@ -1,3 +1,4 @@
 .env
 *.p8
 *.pub
+tests/*.sh
