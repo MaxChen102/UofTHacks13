@@ -25,6 +25,7 @@ export default function Home() {
               href={`/pins/${item.id}`}
               className="w-40 shrink-0"
             >
+              
               <div className="flex flex-col gap-2 pt-2">
                 <div className="relative h-[213px] w-40 overflow-hidden rounded-2xl bg-white">
                   <Image

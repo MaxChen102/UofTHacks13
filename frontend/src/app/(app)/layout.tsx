@@ -13,5 +13,6 @@ export default async function AppGroupLayout({
   }
 
   return <AppShell>{children}</AppShell>;
+  
 }
 

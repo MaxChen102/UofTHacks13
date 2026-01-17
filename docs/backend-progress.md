@@ -74,6 +74,7 @@
 - Configured environment for webhook secret and MongoDB Atlas
 - Set up ngrok host allowlist for webhook testing
 - Tested successfully with Clerk webhook events
+- Documented Clerk dashboard webhook setup (ngrok URL + user events)
 
 **Key Files:**
 
@@ -91,6 +92,19 @@
 - `CLERK_WEBHOOK_SECRET` - Webhook signing secret (starts with `whsec_`)
 - `ALLOWED_HOSTS` - Configurable allowed hosts for production
 - `MONGODB_URI` - Updated to use MongoDB Atlas with database name
+
+### Clerk Webhook Dashboard Setup
+
+1. Start ngrok for the backend (example):
+   - `ngrok http 3000`
+2. In Clerk Dashboard → Webhooks → Add Endpoint:
+   - **Endpoint URL**: `https://<your-ngrok-subdomain>.ngrok-free.app/api/webhooks/clerk`
+   - **Events**: subscribe to all user events:
+     - `user.created`
+     - `user.updated`
+     - `user.deleted`
+3. Copy the webhook signing secret from Clerk and set:
+   - `CLERK_WEBHOOK_SECRET=whsec_...` in `backend/.env`
 
 ---
 

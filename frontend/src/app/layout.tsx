@@ -28,6 +28,7 @@ export default function RootLayout({
           <CollectionsProvider>{children}</CollectionsProvider>
         </body>
       </html>
+      
     </ClerkProvider>
   );
 }
