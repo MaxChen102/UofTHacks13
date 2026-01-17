@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     resources :collections, only: [:create, :index, :update, :destroy]
 
     post "vision/ocr", to: "vision#ocr"
+    post "gemini/structure", to: "gemini#structure"
 
     # Webhook endpoints
     namespace :webhooks do
