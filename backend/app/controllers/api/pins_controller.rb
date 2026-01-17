@@ -7,31 +7,12 @@ module Api
 
   # POST /api/pins
   def create
-    # Validate collection ownership if provided
-    if pin_params[:collection_id].present?
-      collection = current_user.collections.find(pin_params[:collection_id])
-      unless collection
-        render json: { error: "Collection not found or does not belong to user" }, status: :not_found
-        return
-      end
-    end
+    result = CreatePinService.new(current_user, pin_params).call
 
-    # Build pin with collection_id if provided
-    pin = current_user.pins.build(collection_id: pin_params[:collection_id])
-
-    # Add image_url to source_images array if provided
-    if pin_params[:image_url].present?
-      pin.source_images = [pin_params[:image_url]]
-    end
-
-    pin.processing_status = 'processing'
-
-    if pin.save
-      Rails.logger.info("Pin created: #{pin.id} for user #{current_user.email}")
-      render json: pin.as_json, status: :created
+    if result.success?
+      render json: result.data.as_json, status: :created
     else
-      Rails.logger.warn("Pin creation failed: #{pin.errors.full_messages.join(', ')}")
-      render json: { errors: pin.errors.full_messages }, status: :unprocessable_entity
+      render json: { errors: result.errors }, status: :unprocessable_entity
     end
   end
 
@@ -54,21 +35,12 @@ module Api
 
     # PATCH /api/pins/:id
     def update
-      # Validate collection ownership if changing collection
-      if update_params[:collection_id].present?
-        collection = current_user.collections.find(update_params[:collection_id])
-        unless collection
-          render json: { error: "Collection not found or does not belong to user" }, status: :not_found
-          return
-        end
-      end
+      result = UpdatePinService.new(@pin, update_params, current_user).call
 
-      if @pin.update(update_params)
-        Rails.logger.info("Pin updated: #{@pin.id}")
-        render json: @pin.as_json, status: :ok
+      if result.success?
+        render json: result.data.as_json, status: :ok
       else
-        Rails.logger.warn("Pin update failed: #{@pin.errors.full_messages.join(', ')}")
-        render json: { errors: @pin.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: result.errors }, status: :unprocessable_entity
       end
     end
 
