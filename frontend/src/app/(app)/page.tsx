@@ -7,12 +7,12 @@ export default function Home() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold leading-8 text-[var(--foreground)]">
+          <h2 className="text-2xl font-bold leading-8 text-foreground">
             Recent
           </h2>
           <Link
             href="/pins"
-            className="text-sm font-bold leading-5 text-[var(--primary)]"
+            className="text-sm font-bold leading-5 text-(--primary)"
           >
             See All
           </Link>
@@ -44,7 +44,7 @@ export default function Home() {
                     {item.timeAgo}
                   </div>
                 </div>
-                <div className="text-sm font-bold leading-[17.5px] text-[var(--foreground)]">
+                <div className="text-sm font-bold leading-[17.5px] text-foreground">
                   {item.title}
                 </div>
               </div>
@@ -55,12 +55,12 @@ export default function Home() {
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold leading-8 text-[var(--foreground)]">
+          <h2 className="text-2xl font-bold leading-8 text-foreground">
             Lists
           </h2>
           <Link
             href="/collections?create=1"
-            className="text-sm font-bold leading-5 text-[var(--primary)]"
+            className="text-sm font-bold leading-5 text-(--primary)"
           >
             Create New
           </Link>
@@ -73,10 +73,10 @@ export default function Home() {
               href="/collections"
               className="flex h-14 items-center justify-between rounded-2xl bg-white px-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
             >
-              <div className="text-base font-bold leading-6 text-[var(--foreground)]">
+              <div className="text-base font-bold leading-6 text-foreground">
                 {list.name}
               </div>
-              <div className="flex items-center gap-2 text-sm leading-5 text-[var(--muted-foreground)]">
+              <div className="flex items-center gap-2 text-sm leading-5 text-(--muted-foreground)">
                 <span>{list.savesLabel}</span>
                 <span className="text-base leading-6">›</span>
               </div>
@@ -85,9 +85,9 @@ export default function Home() {
 
           <Link
             href="/collections?create=1"
-            className="flex h-[68px] items-center justify-center gap-2 rounded-2xl border-2 border-[var(--border)] bg-transparent text-[var(--muted-foreground)]"
+            className="flex h-[68px] items-center justify-center gap-2 rounded-2xl border-2 border-(--border) bg-transparent text-(--muted-foreground)"
           >
-            <span className="inline-flex size-6 items-center justify-center rounded-full border-2 border-[var(--muted-foreground)] text-lg leading-[18px]">
+            <span className="inline-flex size-6 items-center justify-center rounded-full border-2 border-(--muted-foreground) text-lg leading-[18px]">
               +
             </span>
             <span className="text-base font-bold leading-6">
