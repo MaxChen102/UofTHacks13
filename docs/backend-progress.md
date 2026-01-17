@@ -108,12 +108,13 @@
     - Consistent JSON error responses across all endpoints
 
 - Implemented Pins CRUD endpoints (`/api/pins`)
-    - `POST /api/pins` - Create pin with image_url, optional collection_id
+    - `POST /api/pins` - Create pin with image_url (stored in source_images array), optional collection_id
     - `GET /api/pins/:id` - Show single pin (ownership verified)
     - `GET /api/pins` - List user's pins (supports ?collection_id filter)
     - `PATCH /api/pins/:id` - Update pin (collection_id, title, summary)
     - `DELETE /api/pins/:id` - Delete pin
     - All operations validate ownership and collection access
+    - Image URLs from upload are stored in source_images array field
 
 - Implemented Collections CRUD endpoints (`/api/collections`)
     - `POST /api/collections` - Create collection (name, description)
@@ -194,7 +195,7 @@ ALLOWED_HOSTS=yourapp.com,api.yourapp.com (for production)
 
 **Pins (`/api/pins`):**
 
-- `POST /api/pins` - Create pin (returns with status='processing')
+- `POST /api/pins` - Create pin with `image_url` (stored in `source_images` array), optional `collection_id` (returns with status='processing')
 - `GET /api/pins/:id` - Get single pin
 - `GET /api/pins` - List user's pins (optional: ?collection_id=xxx)
 - `PATCH /api/pins/:id` - Update pin (collection_id, title, summary)
@@ -284,11 +285,13 @@ rails server
 curl http://localhost:3001/api/pins \
   -H "Authorization: Bearer <your_clerk_jwt_token>"
 
-# Create a pin
+# Create a pin (image_url is stored in source_images array)
 curl -X POST http://localhost:3001/api/pins \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{"image_url": "https://example.com/image.jpg"}'
+
+# Response includes source_images: ["https://example.com/image.jpg"]
 
 # List collections
 curl http://localhost:3001/api/collections \

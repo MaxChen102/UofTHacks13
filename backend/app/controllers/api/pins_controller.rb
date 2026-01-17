@@ -5,28 +5,35 @@ module Api
 
     before_action :set_pin, only: [:show, :update, :destroy]
 
-    # POST /api/pins
-    def create
-      # Validate collection ownership if provided
-      if pin_params[:collection_id].present?
-        collection = current_user.collections.find(pin_params[:collection_id])
-        unless collection
-          render json: { error: "Collection not found or does not belong to user" }, status: :not_found
-          return
-        end
-      end
-
-      pin = current_user.pins.build(pin_params)
-      pin.processing_status = 'processing'
-
-      if pin.save
-        Rails.logger.info("Pin created: #{pin.id} for user #{current_user.email}")
-        render json: pin.as_json, status: :created
-      else
-        Rails.logger.warn("Pin creation failed: #{pin.errors.full_messages.join(', ')}")
-        render json: { errors: pin.errors.full_messages }, status: :unprocessable_entity
+  # POST /api/pins
+  def create
+    # Validate collection ownership if provided
+    if pin_params[:collection_id].present?
+      collection = current_user.collections.find(pin_params[:collection_id])
+      unless collection
+        render json: { error: "Collection not found or does not belong to user" }, status: :not_found
+        return
       end
     end
+
+    # Build pin with collection_id if provided
+    pin = current_user.pins.build(collection_id: pin_params[:collection_id])
+
+    # Add image_url to source_images array if provided
+    if pin_params[:image_url].present?
+      pin.source_images = [pin_params[:image_url]]
+    end
+
+    pin.processing_status = 'processing'
+
+    if pin.save
+      Rails.logger.info("Pin created: #{pin.id} for user #{current_user.email}")
+      render json: pin.as_json, status: :created
+    else
+      Rails.logger.warn("Pin creation failed: #{pin.errors.full_messages.join(', ')}")
+      render json: { errors: pin.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
 
     # GET /api/pins/:id
     def show
