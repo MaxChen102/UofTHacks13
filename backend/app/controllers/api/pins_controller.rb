@@ -61,14 +61,22 @@ module Api
     end
 
     def pin_params
-      params.require(:pin).permit(:image_url, :collection_id)
+      base = params.permit(:image_url, :collection_id)
+      return base unless params[:pin].present?
+
+      nested = params.require(:pin).permit(:image_url, :collection_id)
+      base.merge(nested)
     rescue ActionController::ParameterMissing
       # Allow params without wrapping in 'pin' key for convenience
       params.permit(:image_url, :collection_id)
     end
 
     def update_params
-      params.require(:pin).permit(:collection_id, :title, :summary)
+      base = params.permit(:collection_id, :title, :summary)
+      return base unless params[:pin].present?
+
+      nested = params.require(:pin).permit(:collection_id, :title, :summary)
+      base.merge(nested)
     rescue ActionController::ParameterMissing
       # Allow params without wrapping in 'pin' key for convenience
       params.permit(:collection_id, :title, :summary)

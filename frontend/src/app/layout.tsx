@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Arimo, Alice } from "next/font/google";
-import { CollectionsProvider } from "@/components/collections/CollectionsStore";
 import { PinsProvider } from "@/components/pins/PinsStore";
 import { UserRatingsProvider } from "@/components/ratings/UserRatingsStore";
 import "./globals.css";
@@ -38,9 +37,7 @@ export default function RootLayout({
           afterSignOutUrl="/sign-in"
         >
           <UserRatingsProvider>
-            <PinsProvider>
-              <CollectionsProvider>{children}</CollectionsProvider>
-            </PinsProvider>
+            <PinsProvider>{children}</PinsProvider>
           </UserRatingsProvider>
         </ClerkProvider>
       </body>

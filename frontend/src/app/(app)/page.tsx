@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { lists } from "@/lib/sampleData";
 import { usePins } from "@/hooks/usePins";
 import { PinCardSkeleton } from "@/components/shared/LoadingSpinner";
 
@@ -122,30 +121,20 @@ export default function Home() {
           <h2 className="text-2xl font-bold leading-8 text-foreground font-alice">
             Collections
           </h2>
-          <Link
-            href="/collections?create=1"
-            className="text-sm font-bold leading-5 text-primary"
-          >
-            Create New
-          </Link>
         </div>
 
         <div className="flex flex-col gap-3">
-          {lists.map((list) => (
-            <Link
-              key={list.id}
-              href="/collections"
-              className="flex h-14 items-center justify-between rounded-2xl bg-white px-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
-            >
-              <div className="text-base font-bold leading-6 text-foreground">
-                {list.name}
-              </div>
-              <div className="flex items-center gap-2 text-sm leading-5 text-muted-foreground">
-                <span>{list.savesLabel}</span>
-                <span className="text-base leading-6">›</span>
-              </div>
-            </Link>
-          ))}
+          <Link
+            href="/collections"
+            className="flex h-14 items-center justify-between rounded-2xl bg-white px-4 shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_-1px_rgba(0,0,0,0.1)]"
+          >
+            <div className="text-base font-bold leading-6 text-foreground">
+              View Collections
+            </div>
+            <div className="text-base leading-6 text-[var(--muted-foreground)]">
+              ›
+            </div>
+          </Link>
 
           <Link
             href="/collections?create=1"
@@ -154,9 +143,7 @@ export default function Home() {
             <span className="inline-flex size-6 items-center justify-center rounded-full border-2 border-muted-foreground text-lg leading-[18px]">
               +
             </span>
-            <span className="text-base font-bold leading-6">
-              Create New List
-            </span>
+            <span className="text-base font-bold leading-6">Create New Collection</span>
           </Link>
         </div>
       </section>
