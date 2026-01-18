@@ -62,13 +62,10 @@ export function PinLocationCard({
   );
 }
 
-// TODO: Use Google Places API to get real place_ids from lat/lng coordinates
-// For now, we skip place_id and use lat/lng directly to avoid invalid place_id errors
-// Future: Re-enable place_id usage once we integrate Google Places API
-// function isGooglePlaceId(value?: string | null): value is string {
-//   if (!value) return false;
-//   return value.startsWith("ChI");
-// }
+function isGooglePlaceId(value?: string | null): value is string {
+  if (!value) return false;
+  return value.startsWith("ChI");
+}
 
 function buildEmbedSrc(apiKey: string | undefined, location: Location): string | undefined {
   if (apiKey && isGooglePlaceId(location.place_id)) {
