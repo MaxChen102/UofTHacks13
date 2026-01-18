@@ -21,7 +21,8 @@ class Pin
 
   validates :user_id, presence: true
   validates :processing_status, inclusion: { in: %w[pending processing complete failed] }
-  
+  validates :pin_type, inclusion: { in: %w[restaurant concert sports event] }, allow_nil: true
+
   index({ user_id: 1, created_at: -1 })
   index({ processing_status: 1 })
   index({ collection_id: 1 })
