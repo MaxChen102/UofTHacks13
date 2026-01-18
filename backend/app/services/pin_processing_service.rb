@@ -23,21 +23,22 @@ class PinProcessingService
     details = parse_json(result[:json_text])
     metadata = build_metadata(result, details)
 
-    # Step 2: Determine pin type and title
+    # Step 2: Extract title and fetch search results early (needed for classification)
     title = details["title"]
-    pin_type = determine_pin_type(details)
+    search_results = fetch_search_results(title, details)
+
+    # Step 2b: Classify pin type with AI using all available data
+    classification_result = classify_pin_type(result[:text], details, search_results)
+    pin_type = classification_result[:pin_type]
 
     # Step 3: Google Places API - get location data (lat/lng, place_id, etc.)
     places_result = lookup_place(details, result[:text])
 
-    # Step 4: Google Custom Search + Gemini Flash - get summary and links
-    search_summary = nil
-    if title.is_a?(String) && !title.strip.empty?
-      search_summary = perform_search_and_summarize(title, details, pin_type)
-    end
+    # Step 4: Summarize search results (reuse search_results from step 2)
+    search_summary = summarize_search_results(search_results, title, pin_type)
 
-    # Step 5: Build update attributes with both enrichments
-    update_attrs = build_update_attrs(details, result, metadata, places_result, search_summary, pin_type)
+    # Step 5: Build update attributes with enrichments and classification metadata
+    update_attrs = build_update_attrs(details, result, metadata, places_result, search_summary, pin_type, classification_result)
 
     @pin.update!(update_attrs)
   end
@@ -126,7 +127,7 @@ class PinProcessingService
     { "address" => address }
   end
 
-  def determine_pin_type(details)
+  def determine_pin_type_fallback(details)
     extra = details["extra"].to_s.downcase
 
     return "concert" if extra.include?("concert") || extra.include?("show") || extra.include?("music")
@@ -134,6 +135,43 @@ class PinProcessingService
     return "event" if extra.include?("event") || extra.include?("festival")
 
     "restaurant"
+  end
+
+  # Fetch Google Custom Search results early for use in classification
+  def fetch_search_results(title, details)
+    return nil if title.to_s.strip.empty?
+
+    GoogleSearchService.search_restaurant(name: title, location: details["address"])
+  rescue Errors::GoogleSearchError => e
+    Rails.logger.warn("Google Search failed for pin #{@pin.id}: #{e.message}")
+    nil
+  end
+
+  # Classify pin type using AI with all available data
+  def classify_pin_type(extracted_text, details, search_results)
+    PinTypeClassificationService.new(
+      extracted_text: extracted_text,
+      structured_details: details,
+      search_results: search_results
+    ).call
+  rescue Errors::GeminiError => e
+    Rails.logger.warn("Pin classification failed for pin #{@pin.id}: #{e.message}")
+    # Fallback to old keyword matching
+    { pin_type: determine_pin_type_fallback(details), confidence: "low", reasoning: "Fallback due to API error" }
+  end
+
+  # Summarize search results using existing search data
+  def summarize_search_results(search_results, title, pin_type)
+    return nil unless search_results
+
+    SearchSummaryService.new(
+      search_results: search_results,
+      place_name: title,
+      place_type: pin_type
+    ).call
+  rescue Errors::GeminiError => e
+    Rails.logger.warn("Gemini summarization failed for pin #{@pin.id}: #{e.message}")
+    nil
   end
 
   # Google Places API lookup for location data
@@ -189,7 +227,7 @@ class PinProcessingService
     nil
   end
 
-  def build_update_attrs(details, result, metadata, places_result, search_summary, pin_type)
+  def build_update_attrs(details, result, metadata, places_result, search_summary, pin_type, classification_result)
     update_attrs = {
       processing_status: "complete",
       metadata: metadata,
@@ -204,6 +242,19 @@ class PinProcessingService
     # Location from Google Places API (with lat/lng) or fallback to extracted address
     location = build_location(details, places_result)
     update_attrs[:location] = location if location
+
+    # Add classification metadata
+    if classification_result
+      update_attrs[:metadata] = metadata.merge(
+        "classification" => {
+          "pin_type" => classification_result[:pin_type],
+          "confidence" => classification_result[:confidence],
+          "reasoning" => classification_result[:reasoning],
+          "timestamp" => Time.current.iso8601
+        }
+      )
+      metadata = update_attrs[:metadata]
+    end
 
     # Add places data to metadata
     if places_result
