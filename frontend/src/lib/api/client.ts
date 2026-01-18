@@ -49,10 +49,21 @@ export class ClientApiClient {
       ...options.headers,
     };
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : 'Network error';
+      // This is what browsers typically surface for CORS/DNS/offline issues.
+      throw new ApiError(
+        0,
+        `Failed to fetch ${url}. ${msg} (Check NEXT_PUBLIC_API_URL, CORS on the backend, and ngrok availability.)`
+      );
+    }
 
     const responseText = await response.text();
 
