@@ -9,8 +9,15 @@ const nextConfig: NextConfig = {
         pathname: "/api/mcp/asset/**",
       },
       {
+        // Uploadthing file storage - wildcard for any subdomain
         protocol: "https",
-        hostname: "0zktu15h6i.ufs.sh",
+        hostname: "*.ufs.sh",
+        pathname: "/f/**",
+      },
+      {
+        // Legacy Uploadthing URLs
+        protocol: "https",
+        hostname: "utfs.io",
         pathname: "/f/**",
       }
     ],
