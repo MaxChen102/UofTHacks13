@@ -137,8 +137,9 @@ function coerceLocation(value: unknown): Pin['location'] {
   const lat = typeof value.lat === 'number' ? value.lat : undefined;
   const lng = typeof value.lng === 'number' ? value.lng : undefined;
   const place_id = coerceString(value.place_id) ?? undefined;
+  const google_maps_url = coerceString(value.google_maps_url) ?? undefined;
 
-  if (!address && typeof lat !== 'number' && typeof lng !== 'number' && !place_id) {
+  if (!address && typeof lat !== 'number' && typeof lng !== 'number' && !place_id && !google_maps_url) {
     return null;
   }
 
@@ -147,6 +148,7 @@ function coerceLocation(value: unknown): Pin['location'] {
     lat,
     lng,
     place_id,
+    google_maps_url,
   };
 }
 

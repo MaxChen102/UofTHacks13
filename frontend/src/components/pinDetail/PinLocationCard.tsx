@@ -10,9 +10,7 @@ export function PinLocationCard({
 }) {
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  const embedSrc = mapsApiKey
-    ? buildEmbedSrc(mapsApiKey, location)
-    : undefined;
+  const embedSrc = buildEmbedSrc(mapsApiKey ?? undefined, location);
 
   const hasCoords = typeof location.lat === "number" && typeof location.lng === "number";
   const directionsHref = hasCoords
@@ -69,18 +67,35 @@ function isGooglePlaceId(value?: string | null): value is string {
   return value.startsWith("ChI");
 }
 
-function buildEmbedSrc(apiKey: string, location: Location): string | undefined {
-  if (isGooglePlaceId(location.place_id)) {
+function buildEmbedSrc(apiKey: string | undefined, location: Location): string | undefined {
+  if (apiKey && isGooglePlaceId(location.place_id)) {
     return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=place_id:${encodeURIComponent(location.place_id)}`;
   }
 
-  if (typeof location.lat === "number" && typeof location.lng === "number") {
+  if (apiKey && typeof location.lat === "number" && typeof location.lng === "number") {
     return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=${location.lat},${location.lng}`;
   }
 
-  if (location.address) {
+  if (apiKey && location.address) {
     return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(location.address)}`;
   }
 
+  if (location.google_maps_url) {
+    return toEmbedUrl(location.google_maps_url);
+  }
+
   return undefined;
+}
+
+function toEmbedUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.searchParams.has("output")) {
+      parsed.searchParams.set("output", "embed");
+    }
+    return parsed.toString();
+  } catch {
+    const joiner = url.includes("?") ? "&" : "?";
+    return `${url}${joiner}output=embed`;
+  }
 }

@@ -21,12 +21,13 @@ class PinProcessingService
 
     details = parse_json(result[:json_text])
     summary = build_summary(details, result[:text])
-    metadata = build_metadata(result, details)
+    places_result = lookup_place(details, result[:text])
+    metadata = build_metadata(result, details, places_result)
 
     update_attrs = { processing_status: "complete", metadata: metadata }
     update_attrs[:title] = details["title"] if details["title"].is_a?(String) && !details["title"].strip.empty?
     update_attrs[:summary] = summary if summary
-    location = build_location(details)
+    location = build_location(details, places_result)
     update_attrs[:location] = location if location
 
     @pin.update!(update_attrs)
@@ -86,21 +87,69 @@ class PinProcessingService
     parts.join(" • ")
   end
 
-  def build_metadata(result, details)
+  def build_metadata(result, details, places_result)
     current = @pin.metadata || {}
     current.merge(
       "extracted_text" => result[:text],
       "json_text" => result[:json_text],
-      "parsed" => details
+      "parsed" => details,
+      "places" => places_result
     )
   end
 
-  def build_location(details)
+  def build_location(details, places_result)
     address = details["address"]
-    return nil unless address.is_a?(String) && !address.strip.empty?
+    address = address.is_a?(String) ? address.strip : nil
 
+    if places_result
+      return {
+        "address" => places_result["formatted_address"] || address,
+        "lat" => places_result["lat"],
+        "lng" => places_result["lng"],
+        "place_id" => places_result["place_id"],
+        "name" => places_result["name"],
+        "google_maps_url" => places_result["google_maps_url"]
+      }.compact
+    end
+
+    return nil unless address && !address.empty?
     {
       "address" => address.strip
     }
+  end
+
+  def lookup_place(details, extracted_text)
+    query = build_places_query(details, extracted_text)
+    return nil if query.nil?
+
+    GooglePlacesLookupService.new(query: query).call
+  rescue StandardError => e
+    Rails.logger.warn("Places lookup failed for pin #{@pin.id}: #{e.message}")
+    nil
+  end
+
+  def build_places_query(details, extracted_text)
+    title = details["title"]
+    address = details["address"]
+
+    if title.is_a?(String) && address.is_a?(String)
+      combined = "#{title} #{address}".strip
+      return combined unless combined.empty?
+    end
+
+    if address.is_a?(String)
+      trimmed = address.strip
+      return trimmed unless trimmed.empty?
+    end
+
+    if title.is_a?(String)
+      trimmed = title.strip
+      return trimmed unless trimmed.empty?
+    end
+
+    fallback = extracted_text.to_s.strip
+    return nil if fallback.empty?
+
+    fallback
   end
 end
