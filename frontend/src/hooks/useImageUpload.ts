@@ -13,6 +13,7 @@ export type UploadedImage = {
   type: string;
 };
 
+
 export type UseImageUploadOptions = {
   endpoint?: "imageUploader";
   maxSizeBytes?: number;
@@ -68,11 +69,10 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
       const ok =
         file.type?.startsWith("image/") &&
         (allowedMimeTypes.length === 0 ||
-          allowedMimeTypes.includes(file.type as (typeof allowedMimeTypes)[number]));
+          allowedMimeTypes.includes(file.type));
       if (!ok) {
         throw new Error(
-          `Unsupported file type (${file.type || "unknown"}). Allowed: ${
-            allowedMimeTypes.length ? allowedMimeTypes.join(", ") : "image/*"
+          `Unsupported file type (${file.type || "unknown"}). Allowed: ${allowedMimeTypes.length ? allowedMimeTypes.join(", ") : "image/*"
           }`
         );
       }
@@ -89,10 +89,15 @@ export function useImageUpload(options: UseImageUploadOptions = {}) {
         validate(file);
 
         const res = await startUpload([file]);
-        const first = (res ?? [])[0] as any;
+        const first: unknown = (res ?? [])[0];
 
-        const url: string | undefined = first?.url ?? first?.ufsUrl;
-        const key: string | undefined = first?.key;
+        if (!first || typeof first !== "object") {
+          throw new Error("Upload succeeded but no file data was returned");
+        }
+
+        const fileData = first as { ufsUrl?: string; url?: string; key?: string };
+        const url: string | undefined = fileData.ufsUrl ?? fileData.url;
+        const key: string | undefined = fileData.key;
 
         if (!url) throw new Error("Upload succeeded but no URL was returned");
 

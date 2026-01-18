@@ -2,16 +2,23 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { useCreatePin } from "@/hooks/useCreatePin";
 
 export default function UploadPage() {
+  const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const [file, setFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
 
-  const { upload, reset, status, error, uploaded, isUploading } =
+  const { upload, reset: resetUpload, status, error: uploadError, uploaded, isUploading } =
     useImageUpload();
+  const { createPin, isCreating, error: createError } = useCreatePin();
+
+  const error = uploadError || (createError?.message ?? null);
+  const isProcessing = isUploading || isCreating;
 
   React.useEffect(() => {
     if (!file) {
@@ -28,13 +35,23 @@ export default function UploadPage() {
   }
 
   function onPickFile(next: File | null) {
-    reset();
+    resetUpload();
     setFile(next);
   }
 
   async function onSubmit() {
-    if (!file || isUploading) return;
-    await upload(file);
+    if (!file || isProcessing) return;
+
+    try {
+      const uploadedImage = await upload(file);
+
+      const pin = await createPin({ image_url: uploadedImage.url });
+      if (pin) {
+        router.push(`/pins/${pin.id}`);
+      }
+    } catch (err) {
+      console.error('Failed to create pin:', err);
+    }
   }
 
   return (
@@ -136,14 +153,16 @@ export default function UploadPage() {
       <button
         type="button"
         className="h-12 rounded-full bg-black px-5 text-sm font-bold leading-5 text-white disabled:opacity-50"
-        disabled={!file || isUploading}
+        disabled={!file || isProcessing}
         onClick={onSubmit}
       >
         {isUploading
           ? "Uploading…"
-          : status === "success"
-            ? "Uploaded"
-            : "Submit"}
+          : isCreating
+            ? "Creating Pin…"
+            : status === "success"
+              ? "Uploaded"
+              : "Submit"}
       </button>
     </div>
   );

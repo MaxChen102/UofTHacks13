@@ -1,4 +1,4 @@
-import type { Pin } from "@/lib/sampleData";
+import type { Pin } from "@/lib/types/pin";
 import { PinDetailHeader } from "@/components/pinDetail/PinDetailHeader";
 import { PinAiSummaryCard } from "@/components/pinDetail/PinAiSummaryCard";
 import { PinLinkCard } from "@/components/pinDetail/PinLinkCard";
@@ -7,47 +7,76 @@ import { PinNoteCard } from "@/components/pinDetail/PinNoteCard";
 import { PinSection } from "@/components/pinDetail/PinSection";
 import { PinSourceCard } from "@/components/pinDetail/PinSourceCard";
 
-export function PinDetail({ pin }: { pin: Pin }) {
+function getPinEmoji(pinType: string): string {
+  switch (pinType) {
+    case 'restaurant':
+      return '🍽️';
+    case 'concert':
+      return '🎵';
+    case 'sports':
+      return '⚽';
+    default:
+      return '📍';
+  }
+}
+
+export function PinDetail({ pin }: { readonly pin: Pin }) {
+  const emoji = getPinEmoji(pin.pin_type);
+
+  const linkItems = pin.links
+    ? Object.entries(pin.links)
+        .filter((entry): entry is [string, string] => !!entry[1])
+        .map(([key, url]) => ({
+          id: key,
+          url,
+          title: key.charAt(0).toUpperCase() + key.slice(1),
+        }))
+    : [];
+
   return (
-    <div className="min-h-dvh bg-[var(--background)] text-[var(--foreground)]">
+    <div className="min-h-dvh bg-background text-foreground">
       <PinDetailHeader />
 
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 pt-4">
         <div className="flex items-start gap-3">
-          <div className="text-4xl leading-10">{pin.emoji}</div>
+          <div className="text-4xl leading-10">{emoji}</div>
           <h1 className="pt-1 text-2xl font-bold leading-[30px]">
             {pin.title}
           </h1>
         </div>
 
-        <PinSection title="Links">
-          <div className="flex flex-col gap-3">
-            {pin.links.map((l) => (
-              <PinLinkCard key={l.id} link={l} />
-            ))}
-          </div>
+        {linkItems.length > 0 && (
+          <PinSection title="Links">
+            <div className="flex flex-col gap-3">
+              {linkItems.map((l) => (
+                <PinLinkCard key={l.id} link={l} />
+              ))}
+            </div>
+          </PinSection>
+        )}
+
+        <PinSection title="Summary">
+          <PinNoteCard text={pin.summary} />
         </PinSection>
 
-        <PinSection title="Notes">
-          <PinNoteCard text={pin.notes} />
-        </PinSection>
-
-        {pin.aiSuggestedRating && (pin.aiDescription || pin.aiSummary) ? (
-          <PinSection title="AI Summary">
+        {pin.ai_recommendation ? (
+          <PinSection title="AI Recommendation">
             <PinAiSummaryCard
               ratingKey={`pin:${pin.id}`}
-              aiSuggestedRating={pin.aiSuggestedRating}
-              description={pin.aiDescription ?? pin.aiSummary ?? ""}
+              aiSuggestedRating={5}
+              description={pin.ai_recommendation}
             />
           </PinSection>
         ) : null}
 
-        <PinSection title="Locations">
-          <PinLocationCard emoji={pin.emoji} location={pin.location} />
-        </PinSection>
+        {pin.location && (
+          <PinSection title="Location">
+            <PinLocationCard emoji={emoji} location={pin.location.address} />
+          </PinSection>
+        )}
 
         <PinSection title="Source">
-          <PinSourceCard imageUrl={pin.sourceImageUrl} alt={pin.title} />
+          <PinSourceCard imageUrl={pin.source_images[0]} alt={pin.title} />
         </PinSection>
       </main>
     </div>
