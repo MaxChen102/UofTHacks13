@@ -71,7 +71,7 @@ export function PinDetail({ pin }: { readonly pin: Pin }) {
 
         {pin.location && (
           <PinSection title="Location">
-            <PinLocationCard emoji={emoji} location={pin.location.address} />
+            <PinLocationCard emoji={emoji} location={pin.location} />
           </PinSection>
         )}
 

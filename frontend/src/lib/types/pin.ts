@@ -3,9 +3,9 @@ import { z } from 'zod';
 export const ProcessingStatusSchema = z.enum(['pending', 'processing', 'complete', 'failed']);
 
 export const LocationSchema = z.object({
-  address: z.string(),
-  lat: z.number(),
-  lng: z.number(),
+  address: z.string().optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
   place_id: z.string().optional(),
 });
 
