@@ -128,11 +128,11 @@ class PinProcessingService
 
   def determine_pin_type(details)
     extra = details["extra"].to_s.downcase
-    
+
     return "concert" if extra.include?("concert") || extra.include?("show") || extra.include?("music")
     return "sports" if extra.include?("game") || extra.include?("match") || extra.include?("stadium")
     return "event" if extra.include?("event") || extra.include?("festival")
-    
+
     "restaurant"
   end
 
@@ -175,7 +175,7 @@ class PinProcessingService
   # Google Custom Search + Gemini Flash summarization
   def perform_search_and_summarize(title, details, pin_type)
     address = details["address"]
-    
+
     SearchSummaryService.search_and_summarize(
       name: title,
       address: address,
@@ -190,8 +190,8 @@ class PinProcessingService
   end
 
   def build_update_attrs(details, result, metadata, places_result, search_summary, pin_type)
-    update_attrs = { 
-      processing_status: "complete", 
+    update_attrs = {
+      processing_status: "complete",
       metadata: metadata,
       pin_type: pin_type
     }
@@ -214,10 +214,10 @@ class PinProcessingService
     if search_summary
       # summary: String - AI-generated summary from search results
       update_attrs[:summary] = search_summary[:summary]
-      
+
       # links: Hash { website, tickets, menu, reviews }
       update_attrs[:links] = search_summary[:links] if search_summary[:links].present?
-      
+
       # metadata: Hash - merge with search metadata (highlights, rating, etc.)
       update_attrs[:metadata] = (update_attrs[:metadata] || metadata).merge(search_summary[:metadata] || {})
     else
