@@ -62,7 +62,7 @@ export default function UploadPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold leading-8 text-foreground">
+      <h1 className="text-2xl font-bold leading-8 text-foreground font-alice">
         Upload Screenshot
       </h1>
 

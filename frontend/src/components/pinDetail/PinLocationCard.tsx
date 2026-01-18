@@ -12,8 +12,9 @@ export function PinLocationCard({
 
   const embedSrc = buildEmbedSrc(mapsApiKey, location);
 
-  const hasCoords = typeof location.lat === "number" && typeof location.lng === "number";
-  const directionsHref = hasCoords
+  const directionsHref = isGooglePlaceId(location.place_id)
+    ? `https://www.google.com/maps/dir/?api=1&destination=place_id:${encodeURIComponent(location.place_id)}`
+    : typeof location.lat === "number" && typeof location.lng === "number"
     ? `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`
     : location.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`
