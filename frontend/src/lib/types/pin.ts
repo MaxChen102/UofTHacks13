@@ -7,6 +7,7 @@ export const LocationSchema = z.object({
   lat: z.number().optional(),
   lng: z.number().optional(),
   place_id: z.string().optional(),
+  google_maps_url: z.string().url().optional(),
 });
 
 export const LinksSchema = z.object({

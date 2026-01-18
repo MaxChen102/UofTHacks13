@@ -21,20 +21,15 @@ class PinProcessingService
     result = VisionToGeminiService.new(image_base64: image_base64).call
 
     details = parse_json(result[:json_text])
-    metadata = build_metadata(result, details)
+    summary = build_summary(details, result[:text])
+    places_result = lookup_place(details, result[:text])
+    metadata = build_metadata(result, details, places_result)
 
-    # Step 2: Determine pin type and title
-    title = details["title"]
-    pin_type = determine_pin_type(details)
-
-    # Step 3: Search and summarize with Gemini Flash (if we have a title)
-    search_summary = nil
-    if title.is_a?(String) && !title.strip.empty?
-      search_summary = perform_search_and_summarize(title, details, pin_type)
-    end
-
-    # Step 4: Build update attributes
-    update_attrs = build_update_attrs(details, result, metadata, search_summary, pin_type)
+    update_attrs = { processing_status: "complete", metadata: metadata }
+    update_attrs[:title] = details["title"] if details["title"].is_a?(String) && !details["title"].strip.empty?
+    update_attrs[:summary] = summary if summary
+    location = build_location(details, places_result)
+    update_attrs[:location] = location if location
 
     @pin.update!(update_attrs)
   end
@@ -93,82 +88,69 @@ class PinProcessingService
     parts.join(" • ")
   end
 
-  def build_metadata(result, details)
+  def build_metadata(result, details, places_result)
     current = @pin.metadata || {}
     current.merge(
       "extracted_text" => result[:text],
       "json_text" => result[:json_text],
-      "parsed" => details
+      "parsed" => details,
+      "places" => places_result
     )
   end
 
-  def build_location(details)
+  def build_location(details, places_result)
     address = details["address"]
-    return nil unless address.is_a?(String) && !address.strip.empty?
+    address = address.is_a?(String) ? address.strip : nil
 
+    if places_result
+      return {
+        "address" => places_result["formatted_address"] || address,
+        "lat" => places_result["lat"],
+        "lng" => places_result["lng"],
+        "place_id" => places_result["place_id"],
+        "name" => places_result["name"],
+        "google_maps_url" => places_result["google_maps_url"]
+      }.compact
+    end
+
+    return nil unless address && !address.empty?
     {
       "address" => address.strip
     }
   end
 
-  def determine_pin_type(details)
-    # Default to restaurant for now, can be expanded based on content analysis
-    extra = details["extra"].to_s.downcase
-    
-    return "concert" if extra.include?("concert") || extra.include?("show") || extra.include?("music")
-    return "sports" if extra.include?("game") || extra.include?("match") || extra.include?("stadium")
-    return "event" if extra.include?("event") || extra.include?("festival")
-    
-    "restaurant"
+  def lookup_place(details, extracted_text)
+    query = build_places_query(details, extracted_text)
+    return nil if query.nil?
+
+    GooglePlacesLookupService.new(query: query).call
+  rescue StandardError => e
+    Rails.logger.warn("Places lookup failed for pin #{@pin.id}: #{e.message}")
+    nil
   end
 
-  def perform_search_and_summarize(title, details, pin_type)
+  def build_places_query(details, extracted_text)
+    title = details["title"]
     address = details["address"]
-    
-    SearchSummaryService.search_and_summarize(
-      name: title,
-      address: address,
-      place_type: pin_type
-    )
-  rescue Errors::GoogleSearchError => e
-    Rails.logger.warn("Google Search failed for pin #{@pin.id}: #{e.message}")
-    nil
-  rescue Errors::GeminiError => e
-    Rails.logger.warn("Gemini summarization failed for pin #{@pin.id}: #{e.message}")
-    nil
-  end
 
-  def build_update_attrs(details, result, metadata, search_summary, pin_type)
-    update_attrs = { 
-      processing_status: "complete", 
-      metadata: metadata,
-      pin_type: pin_type
-    }
-
-    # Title from extracted details
-    if details["title"].is_a?(String) && !details["title"].strip.empty?
-      update_attrs[:title] = details["title"]
+    if title.is_a?(String) && address.is_a?(String)
+      combined = "#{title} #{address}".strip
+      return combined unless combined.empty?
     end
 
-    # Location from extracted details
-    location = build_location(details)
-    update_attrs[:location] = location if location
-
-    # If search summary available, use enriched data matching Pin model structure
-    if search_summary
-      # summary: String
-      update_attrs[:summary] = search_summary[:summary]
-      
-      # links: Hash { website, tickets, menu, reviews }
-      update_attrs[:links] = search_summary[:links] if search_summary[:links].present?
-      
-      # metadata: Hash - merge extracted data with search metadata
-      update_attrs[:metadata] = metadata.merge(search_summary[:metadata] || {})
-    else
-      # Fallback to basic summary from extracted text
-      update_attrs[:summary] = build_summary(details, result[:text])
+    if address.is_a?(String)
+      trimmed = address.strip
+      return trimmed unless trimmed.empty?
     end
 
-    update_attrs
+    if title.is_a?(String)
+      trimmed = title.strip
+      return trimmed unless trimmed.empty?
+    end
+
+    fallback = extracted_text.to_s.strip
+    return nil if fallback.empty?
+
+    fallback
   end
 end
