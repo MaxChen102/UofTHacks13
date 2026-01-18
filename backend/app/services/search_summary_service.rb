@@ -5,12 +5,14 @@ require "net/http"
 require "json"
 
 class SearchSummaryService
-  DEFAULT_MODEL = "gemini-2.0-flash"
+  DEFAULT_MODEL = "gemini-3-flash-preview"
 
-  def initialize(search_results:, place_name:, place_type: "restaurant")
+  def initialize(search_results:, place_name:, place_type: "restaurant", extracted_text: nil, places_data: nil)
     @search_results = search_results
     @place_name = place_name.to_s.strip
     @place_type = place_type.to_s.strip
+    @extracted_text = extracted_text.to_s.strip
+    @places_data = places_data
   end
 
   # Returns hash matching Pin model fields:
@@ -45,7 +47,7 @@ class SearchSummaryService
   end
 
   # Convenience method to search and summarize in one call
-  def self.search_and_summarize(name:, address: nil, place_type: "restaurant")
+  def self.search_and_summarize(name:, address: nil, place_type: "restaurant", extracted_text: nil, places_data: nil)
     # Perform search
     search_results = GoogleSearchService.search_restaurant(name: name, location: address)
 
@@ -53,7 +55,9 @@ class SearchSummaryService
     new(
       search_results: search_results,
       place_name: name,
-      place_type: place_type
+      place_type: place_type,
+      extracted_text: extracted_text,
+      places_data: places_data
     ).call
   end
 
@@ -61,15 +65,20 @@ class SearchSummaryService
 
   def build_prompt
     results_text = format_search_results
+    ocr_section = @extracted_text.empty? ? "" : "\nExtracted Text from Image (OCR):\n#{@extracted_text.first(1000)}\n"
+    places_section = format_places_data
 
     <<~PROMPT
       You are an AI assistant helping users learn about places they want to visit.
-      
-      Analyze these web search results for "#{@place_name}" (a #{@place_type}) and extract useful information.
-      
+
+      Analyze the following information for "#{@place_name}" (a #{@place_type}) and extract useful information.
+      #{places_section}#{ocr_section}
       Search Results:
       #{results_text}
-      
+
+      IMPORTANT: Focus ONLY on the specific location identified in the "Verified Location" section above.
+      If search results mention multiple locations with the same name, prioritize the one matching the verified address.
+
       Respond with JSON only (no markdown code blocks). Use this exact schema:
       {
         "summary": "A 2-3 sentence summary of what this place is known for, its cuisine/specialty, atmosphere, and why someone might want to visit.",
@@ -93,10 +102,32 @@ class SearchSummaryService
     PROMPT
   end
 
+  def format_places_data
+    return "" unless @places_data
+
+    address = @places_data["formatted_address"] || @places_data["name"]
+    rating = @places_data["rating"]
+    phone = @places_data["phone_number"]
+
+    parts = []
+    parts << "Address: #{address}" if address
+    parts << "Rating: #{rating}/5 (#{@places_data['user_ratings_total']} reviews)" if rating
+    parts << "Phone: #{phone}" if phone
+
+    return "" if parts.empty?
+
+    <<~PLACES
+
+      Verified Location (from Google Places API):
+      #{parts.join("\n")}
+
+    PLACES
+  end
+
   def format_search_results
     @search_results[:results].map.with_index do |result, i|
       pagemap_info = format_pagemap(result[:pagemap])
-      
+
       <<~RESULT
         Result #{i + 1}:
         Title: #{result[:title]}
@@ -151,7 +182,8 @@ class SearchSummaryService
       ],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 1024
+        maxOutputTokens: 2048,
+        responseMimeType: "application/json"
       }
     }.to_json
 
@@ -168,9 +200,9 @@ class SearchSummaryService
   def parse_gemini_response(text)
     # Remove markdown code blocks if present
     cleaned = text.gsub(/```json\s*/i, "").gsub(/```\s*/, "").strip
-    
+
     parsed = JSON.parse(cleaned)
-    
+
     # Return structure matching Pin model fields
     {
       summary: parsed["summary"] || "Information about #{@place_name}.",
@@ -178,10 +210,12 @@ class SearchSummaryService
       metadata: normalize_metadata(parsed["metadata"] || {})
     }
   rescue JSON::ParserError => e
-    Rails.logger.warn("SearchSummaryService JSON parse failed: #{e.message}")
-    # Return the raw text as summary if JSON parsing fails
+    Rails.logger.error("SearchSummaryService JSON parse failed for #{@place_name}: #{e.message}")
+    Rails.logger.error("Incomplete Gemini response (#{text.length} chars): #{text[0..200]}...")
+
+    # Return fallback summary
     {
-      summary: text.length > 500 ? text[0..500] + "..." : text,
+      summary: "Information about #{@place_name}. Please check search results for details.",
       links: extract_links_from_results,
       metadata: {}
     }

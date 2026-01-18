@@ -3,10 +3,11 @@ class PinTypeClassificationService
   MAX_EXTRACTED_TEXT_LENGTH = 800
   MAX_SEARCH_RESULTS_LENGTH = 1000
 
-  def initialize(extracted_text:, structured_details:, search_results: nil)
+  def initialize(extracted_text:, structured_details:, search_results: nil, summary: nil)
     @extracted_text = extracted_text.to_s
     @structured_details = structured_details || {}
     @search_results = search_results
+    @summary = summary.to_s.strip
   end
 
   def call
@@ -21,7 +22,7 @@ class PinTypeClassificationService
   private
 
   def insufficient_data?
-    @extracted_text.strip.empty? && @structured_details.empty?
+    @extracted_text.strip.empty? && @structured_details.empty? && @summary.empty?
   end
 
   def default_result
@@ -41,6 +42,7 @@ class PinTypeClassificationService
   def build_classification_prompt
     truncated_text = @extracted_text.strip.first(MAX_EXTRACTED_TEXT_LENGTH)
     search_snippet = format_search_results
+    summary_section = @summary.empty? ? "" : "\nAI-GENERATED SUMMARY:\n#{@summary.first(500)}\n"
 
     <<~PROMPT
       You are a classification assistant. Analyze the following data and classify this pin into ONE of these types:
@@ -48,7 +50,7 @@ class PinTypeClassificationService
       - concert (music performances, tours, shows, festivals with musical acts)
       - sports (games, matches, sporting events, team events)
       - event (conferences, exhibitions, general events not fitting other categories)
-
+      #{summary_section}
       EXTRACTED TEXT FROM IMAGE:
       #{truncated_text.empty? ? "[No text extracted]" : truncated_text}
 
@@ -127,7 +129,7 @@ class PinTypeClassificationService
   end
 
   def call_gemini_api(prompt)
-    uri = URI("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=#{ENV['GEMINI_API_KEY']}")
+    uri = URI("https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=#{ENV['GEMINI_API_KEY']}")
 
     request_body = {
       contents: [{
@@ -135,7 +137,7 @@ class PinTypeClassificationService
       }],
       generationConfig: {
         temperature: 0.2,
-        maxOutputTokens: 256,
+        maxOutputTokens: 512,
         responseMimeType: "application/json"
       }
     }

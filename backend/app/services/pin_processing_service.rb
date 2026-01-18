@@ -23,22 +23,37 @@ class PinProcessingService
     details = parse_json(result[:json_text])
     metadata = build_metadata(result, details)
 
-    # Step 2: Extract title and fetch search results early (needed for classification)
+    # Step 2: Google Places API - get accurate location data FIRST (lat/lng, place_id, etc.)
     title = details["title"]
-    search_results = fetch_search_results(title, details)
+    places_result = lookup_place(details, result[:text])
 
-    # Step 2b: Classify pin type with AI using all available data
+    # Step 3: Fetch search results using accurate location from Places API
+    search_results = fetch_search_results(title, details, places_result)
+
+    # Step 3b: Classify pin type with AI using all available data
     classification_result = classify_pin_type(result[:text], details, search_results)
     pin_type = classification_result[:pin_type]
 
-    # Step 3: Google Places API - get location data (lat/lng, place_id, etc.)
-    places_result = lookup_place(details, result[:text])
+    # Step 4: Summarize search results with OCR text AND Places API context for disambiguation
+    search_summary = summarize_search_results(search_results, title, pin_type, result[:text], places_result)
 
-    # Step 4: Summarize search results (reuse search_results from step 2)
-    search_summary = summarize_search_results(search_results, title, pin_type)
+    # Step 5: FINAL classification and title generation using enriched summary
+    if search_summary && search_summary[:summary].present?
+      # Reclassify with summary for better accuracy
+      final_classification = classify_pin_type_with_summary(result[:text], details, search_results, search_summary[:summary])
+      final_pin_type = final_classification[:pin_type]
 
-    # Step 5: Build update attributes with enrichments and classification metadata
-    update_attrs = build_update_attrs(details, result, metadata, places_result, search_summary, pin_type, classification_result)
+      # Generate contextual title (e.g., "Dinner at Grappa" instead of just "Grappa")
+      final_title = generate_contextual_title(title, final_pin_type, search_summary[:summary], result[:text])
+    else
+      # Fallback to initial classification and title if no summary
+      final_classification = classification_result
+      final_pin_type = pin_type
+      final_title = title
+    end
+
+    # Step 6: Build update attributes with final classification and title
+    update_attrs = build_update_attrs(details, result, metadata, places_result, search_summary, final_pin_type, final_classification, final_title)
 
     @pin.update!(update_attrs)
   end
@@ -137,11 +152,18 @@ class PinProcessingService
     "restaurant"
   end
 
-  # Fetch Google Custom Search results early for use in classification
-  def fetch_search_results(title, details)
+  # Fetch Google Custom Search results using accurate location from Places API
+  def fetch_search_results(title, details, places_result)
     return nil if title.to_s.strip.empty?
 
-    GoogleSearchService.search_restaurant(name: title, location: details["address"])
+    # Use Places API location (most accurate), fallback to details["address"]
+    location = if places_result
+                 places_result["formatted_address"] || places_result["name"]
+               else
+                 details["address"]
+               end
+
+    GoogleSearchService.search_restaurant(name: title, location: location)
   rescue Errors::GoogleSearchError => e
     Rails.logger.warn("Google Search failed for pin #{@pin.id}: #{e.message}")
     nil
@@ -160,14 +182,44 @@ class PinProcessingService
     { pin_type: determine_pin_type_fallback(details), confidence: "low", reasoning: "Fallback due to API error" }
   end
 
-  # Summarize search results using existing search data
-  def summarize_search_results(search_results, title, pin_type)
+  # FINAL classification with summary for maximum accuracy
+  def classify_pin_type_with_summary(extracted_text, details, search_results, summary)
+    PinTypeClassificationService.new(
+      extracted_text: extracted_text,
+      structured_details: details,
+      search_results: search_results,
+      summary: summary
+    ).call
+  rescue Errors::GeminiError => e
+    Rails.logger.warn("Final classification failed for pin #{@pin.id}: #{e.message}")
+    # Fallback to initial classification
+    classify_pin_type(extracted_text, details, search_results)
+  end
+
+  # Generate contextual title (e.g., "Dinner at Grappa" instead of "Grappa")
+  def generate_contextual_title(place_name, pin_type, summary, extracted_text)
+    PinTitleGenerationService.new(
+      place_name: place_name,
+      pin_type: pin_type,
+      summary: summary,
+      extracted_text: extracted_text
+    ).call
+  rescue Errors::GeminiError => e
+    Rails.logger.warn("Title generation failed for pin #{@pin.id}: #{e.message}")
+    # Fallback to original title
+    place_name
+  end
+
+  # Summarize search results using search data, OCR text, and Places API context
+  def summarize_search_results(search_results, title, pin_type, extracted_text, places_result)
     return nil unless search_results
 
     SearchSummaryService.new(
       search_results: search_results,
       place_name: title,
-      place_type: pin_type
+      place_type: pin_type,
+      extracted_text: extracted_text,
+      places_data: places_result
     ).call
   rescue Errors::GeminiError => e
     Rails.logger.warn("Gemini summarization failed for pin #{@pin.id}: #{e.message}")
@@ -227,15 +279,17 @@ class PinProcessingService
     nil
   end
 
-  def build_update_attrs(details, result, metadata, places_result, search_summary, pin_type, classification_result)
+  def build_update_attrs(details, result, metadata, places_result, search_summary, pin_type, classification_result, final_title = nil)
     update_attrs = {
       processing_status: "complete",
       metadata: metadata,
       pin_type: pin_type
     }
 
-    # Title from extracted details
-    if details["title"].is_a?(String) && !details["title"].strip.empty?
+    # Title: Use final generated title if available, otherwise use extracted title
+    if final_title.present?
+      update_attrs[:title] = final_title
+    elsif details["title"].is_a?(String) && !details["title"].strip.empty?
       update_attrs[:title] = details["title"]
     end
 
