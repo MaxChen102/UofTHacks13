@@ -41,7 +41,7 @@ export function PinDetail({ pin }: { readonly pin: Pin }) {
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 pb-10 pt-4">
         <div className="flex items-start gap-3">
           <div className="text-4xl leading-10">{emoji}</div>
-          <h1 className="pt-1 text-2xl font-bold leading-[30px]">
+          <h1 className="pt-1 text-2xl font-bold leading-[30px] font-alice">
             {pin.title}
           </h1>
         </div>

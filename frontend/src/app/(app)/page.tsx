@@ -43,7 +43,7 @@ export default function Home() {
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold leading-8 text-foreground">
+          <h2 className="text-2xl font-bold leading-8 text-foreground font-alice">
             Recent
           </h2>
           <Link
@@ -119,8 +119,8 @@ export default function Home() {
 
       <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold leading-8 text-foreground">
-            Lists
+          <h2 className="text-2xl font-bold leading-8 text-foreground font-alice">
+            Collections
           </h2>
           <Link
             href="/collections?create=1"
