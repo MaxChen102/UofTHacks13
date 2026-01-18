@@ -37,9 +37,15 @@ export class ClientApiClient {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
 
+    const isNgrok =
+      this.baseURL.includes('.ngrok-free.dev') ||
+      this.baseURL.includes('.ngrok.io') ||
+      this.baseURL.includes('.ngrok.app');
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${this.token}`,
+      ...(isNgrok ? { 'ngrok-skip-browser-warning': 'true' } : {}),
       ...options.headers,
     };
 

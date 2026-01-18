@@ -17,25 +17,11 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Google Places test (optional)
+### Backend API + Google Maps embed (optional)
 
-The app includes a local API route at `/api/places` that uses `GOOGLE_MAPS_API_KEY` to look up a place by name.
-
-- **PowerShell example** (ensure the env vars are set in the SAME terminal that runs `npm run dev`):
-
-```powershell
-cd frontend
-$env:GOOGLE_MAPS_API_KEY="YOUR_SERVER_KEY"
-$env:NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="YOUR_BROWSER_EMBED_KEY"
-npm run dev
-```
-
-Then in another terminal:
-
-```powershell
-cd frontend
-node scripts/testPlaces.mjs "Nobu"
-```
+- **Backend**: configure `NEXT_PUBLIC_API_URL` (e.g. `http://localhost:3001` or your ngrok URL) so the frontend can call Rails `/api/pins`.
+- **Map preview**: you can optionally set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to use the official Google Maps Embed API.
+  - If it’s not set, the UI falls back to a free `output=embed` map URL (no key).
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
