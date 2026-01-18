@@ -9,7 +9,7 @@ import {
 } from '../types/collection';
 
 export class CollectionsApi {
-  constructor(private client: ClientApiClient) {}
+  constructor(private client: ClientApiClient) { }
 
   async list(): Promise<Collection[]> {
     const response = await this.client.get<unknown>('/api/collections');
