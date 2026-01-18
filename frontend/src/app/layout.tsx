@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Arimo } from "next/font/google";
+import { Arimo, Alice } from "next/font/google";
 import { CollectionsProvider } from "@/components/collections/CollectionsStore";
 import { PinsProvider } from "@/components/pins/PinsStore";
 import { UserRatingsProvider } from "@/components/ratings/UserRatingsStore";
@@ -11,6 +11,12 @@ const arimo = Arimo({
   variable: "--font-arimo",
   subsets: ["latin"],
   weight: ["400", "700"],
+});
+
+const alice = Alice({
+  variable: "--font-alice",
+  subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -25,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${arimo.variable} antialiased`}>
+      <body className={`${arimo.variable} ${alice.variable} antialiased`}>
         <ClerkProvider
           afterSignInUrl="/"
           afterSignUpUrl="/"

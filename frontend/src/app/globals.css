@@ -17,6 +17,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --font-sans: var(--font-arimo);
+  --font-alice: var(--font-alice);
 }
 
 body {
