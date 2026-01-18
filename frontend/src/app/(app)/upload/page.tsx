@@ -5,6 +5,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useImageUpload } from "@/hooks/useImageUpload";
 import { useCreatePin } from "@/hooks/useCreatePin";
+import { useCollections } from "@/hooks/useCollections";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -12,10 +13,12 @@ export default function UploadPage() {
   const [file, setFile] = React.useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [collectionId, setCollectionId] = React.useState<string>("");
 
   const { upload, reset: resetUpload, status, error: uploadError, uploaded, isUploading } =
     useImageUpload();
   const { createPin, isCreating, error: createError } = useCreatePin();
+  const { collections, isLoading: collectionsLoading } = useCollections();
 
   const error = uploadError || (createError?.message ?? null);
   const isProcessing = isUploading || isCreating;
@@ -45,7 +48,10 @@ export default function UploadPage() {
     try {
       const uploadedImage = await upload(file);
 
-      const pin = await createPin({ image_url: uploadedImage.url });
+      const pin = await createPin({
+        image_url: uploadedImage.url,
+        collection_id: collectionId || undefined,
+      });
       if (pin) {
         router.push(`/pins/${pin.id}`);
       }
@@ -149,6 +155,27 @@ export default function UploadPage() {
           </a>
         </div>
       ) : null}
+
+      <div className="rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm leading-6">
+        <div className="text-xs font-bold uppercase tracking-[0.12em] text-[var(--muted-foreground)]">
+          Collection
+        </div>
+        <div className="mt-2">
+          <select
+            value={collectionId}
+            onChange={(e) => setCollectionId(e.target.value)}
+            className="h-11 w-full rounded-xl border border-[var(--border)] bg-white px-3 text-sm"
+            disabled={collectionsLoading}
+          >
+            <option value="">None</option>
+            {collections.map((collection) => (
+              <option key={collection.id} value={collection.id}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <button
         type="button"
