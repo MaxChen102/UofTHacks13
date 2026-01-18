@@ -3,7 +3,7 @@ require "net/http"
 require "json"
 
 class GeminiStructuredTextService
-  DEFAULT_MODEL = "gemini-2.5-flash"
+  DEFAULT_MODEL = "gemini-2.0-flash"
 
   def initialize(text:, schema_hint: nil, entity_type: nil)
     @text = text.to_s.strip
@@ -23,7 +23,9 @@ class GeminiStructuredTextService
     text = response.dig("candidates", 0, "content", "parts", 0, "text")
     raise Errors::GeminiError, "Gemini response missing text" if text.nil? || text.strip.empty?
 
-    text.strip
+    # Clean up response - remove markdown code blocks if present
+    cleaned = text.strip.gsub(/```json\s*/i, "").gsub(/```\s*/, "").strip
+    cleaned
   end
 
   private
@@ -33,16 +35,22 @@ class GeminiStructuredTextService
     entity_label = @entity_type.empty? ? "place" : @entity_type
 
     <<~PROMPT
-      You are a parser. Convert the input into JSON only (no markdown).
-      If a field is unknown, return null. Do not invent data.
+      Extract structured information from this text and return valid JSON only.
+      No markdown, no code blocks, just raw JSON.
+      If a field is unknown or not present, use null.
 
-      Schema:
-      #{schema}
+      Required JSON schema:
+      {
+        "title": "name of place, restaurant, or event",
+        "address": "full street address if present, or null",
+        "time": "date/time if present, or null",
+        "extra": "type of cuisine, category, or other useful details"
+      }
 
-      Entity type (pin_type): #{entity_label}
+      Text to parse:
+      #{@text[0..2000]}
 
-      Input:
-      #{@text}
+      Return only the JSON object, nothing else.
     PROMPT
   end
 
@@ -55,10 +63,10 @@ class GeminiStructuredTextService
   def pin_schema_hint
     <<~SCHEMA
       {
-        "title": string | null,          // name of place/event
-        "address": string | null,        // full address if present
-        "time": string | null,           // ISO 8601 or raw time text
-        "extra": string | null           // extra details useful for search
+        "title": string | null,
+        "address": string | null,
+        "time": string | null,
+        "extra": string | null
       }
     SCHEMA
   end
@@ -68,6 +76,7 @@ class GeminiStructuredTextService
     uri = URI.parse("https://generativelanguage.googleapis.com/v1beta/models/#{model}:generateContent?key=#{api_key}")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
+    http.read_timeout = 30
 
     request = Net::HTTP::Post.new(uri.request_uri)
     request["Content-Type"] = "application/json"
@@ -79,8 +88,8 @@ class GeminiStructuredTextService
         }
       ],
       generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 512
+        temperature: 0.1,
+        maxOutputTokens: 1024
       }
     }.to_json
 
