@@ -11,7 +11,7 @@ export default function PinDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { pin, isLoading, error, isProcessing, isComplete, isFailed } = usePinPolling(id);
+  const { pin, isLoading, error, isProcessing, isFailed } = usePinPolling(id);
 
   if (isLoading || !pin) {
     return (
@@ -56,4 +56,3 @@ export default function PinDetailPage({
 
   return <PinDetail pin={pin} />;
 }
-

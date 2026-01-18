@@ -20,6 +20,14 @@ export type PinLocation = {
   address: string;
   directionsHref: string;
   mapEmbedSrc?: string;
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+  googleRating?: number;
+  userRatingsTotal?: number;
+  website?: string;
+  phoneNumber?: string;
+  googleMapsUrl?: string;
 };
 
 export type Pin = {

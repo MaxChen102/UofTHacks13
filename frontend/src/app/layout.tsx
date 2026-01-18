@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Arimo } from "next/font/google";
 import { CollectionsProvider } from "@/components/collections/CollectionsStore";
+import { PinsProvider } from "@/components/pins/PinsStore";
 import { UserRatingsProvider } from "@/components/ratings/UserRatingsStore";
 import "./globals.css";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
           afterSignOutUrl="/sign-in"
         >
           <UserRatingsProvider>
-            <CollectionsProvider>{children}</CollectionsProvider>
+            <PinsProvider>
+              <CollectionsProvider>{children}</CollectionsProvider>
+            </PinsProvider>
           </UserRatingsProvider>
         </ClerkProvider>
       </body>
