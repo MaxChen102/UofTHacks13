@@ -32,6 +32,7 @@ export function PinDetail({ pin }: { readonly pin: Pin }) {
           title: key.charAt(0).toUpperCase() + key.slice(1),
         }))
     : [];
+  const geminiJson = formatGeminiJson(pin.metadata);
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
@@ -59,6 +60,14 @@ export function PinDetail({ pin }: { readonly pin: Pin }) {
           <PinNoteCard text={pin.summary} />
         </PinSection>
 
+        {geminiJson && (
+          <PinSection title="Gemini JSON">
+            <pre className="whitespace-pre-wrap rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-xs leading-5 text-foreground">
+              {geminiJson}
+            </pre>
+          </PinSection>
+        )}
+
         {pin.ai_recommendation ? (
           <PinSection title="AI Recommendation">
             <PinAiSummaryCard
@@ -81,5 +90,26 @@ export function PinDetail({ pin }: { readonly pin: Pin }) {
       </main>
     </div>
   );
+}
+
+function formatGeminiJson(metadata: Pin["metadata"]): string | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const jsonText = (metadata as Record<string, unknown>).json_text;
+  const parsed = (metadata as Record<string, unknown>).parsed;
+
+  if (typeof jsonText === "string" && jsonText.trim().length > 0) {
+    try {
+      const json = JSON.parse(jsonText);
+      return JSON.stringify(json, null, 2);
+    } catch {
+      return jsonText;
+    }
+  }
+
+  if (parsed && typeof parsed === "object") {
+    return JSON.stringify(parsed, null, 2);
+  }
+
+  return null;
 }
 

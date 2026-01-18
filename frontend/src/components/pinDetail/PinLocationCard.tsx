@@ -10,13 +10,12 @@ export function PinLocationCard({
 }) {
   const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  const embedSrc = mapsApiKey && location.place_id
-    ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(mapsApiKey)}&q=place_id:${encodeURIComponent(location.place_id)}`
-    : mapsApiKey && location.lat && location.lng
-    ? `https://www.google.com/maps/embed/v1/view?key=${encodeURIComponent(mapsApiKey)}&center=${location.lat},${location.lng}&zoom=15`
+  const embedSrc = mapsApiKey
+    ? buildEmbedSrc(mapsApiKey, location)
     : undefined;
 
-  const directionsHref = location.lat && location.lng
+  const hasCoords = typeof location.lat === "number" && typeof location.lng === "number";
+  const directionsHref = hasCoords
     ? `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`
     : location.address
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location.address)}`
@@ -63,4 +62,25 @@ export function PinLocationCard({
       </div>
     </div>
   );
+}
+
+function isGooglePlaceId(value?: string | null): value is string {
+  if (!value) return false;
+  return value.startsWith("ChI");
+}
+
+function buildEmbedSrc(apiKey: string, location: Location): string | undefined {
+  if (isGooglePlaceId(location.place_id)) {
+    return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=place_id:${encodeURIComponent(location.place_id)}`;
+  }
+
+  if (typeof location.lat === "number" && typeof location.lng === "number") {
+    return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=${location.lat},${location.lng}`;
+  }
+
+  if (location.address) {
+    return `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(apiKey)}&q=${encodeURIComponent(location.address)}`;
+  }
+
+  return undefined;
 }

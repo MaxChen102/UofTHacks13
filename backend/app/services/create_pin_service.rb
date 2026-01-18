@@ -54,10 +54,21 @@ class CreatePinService
   def save_pin
     if @pin.save
       Rails.logger.info("Pin created: #{@pin.id} for user #{@user.email}")
+      enqueue_processing_job
       Result.new(success: true, data: @pin)
     else
       Rails.logger.warn("Pin creation failed: #{@pin.errors.full_messages.join(', ')}")
       Result.new(success: false, errors: @pin.errors.full_messages)
     end
+  end
+
+  def enqueue_processing_job
+    PinProcessorJob.perform_later(@pin.id.to_s)
+  rescue StandardError => e
+    Rails.logger.error("Failed to enqueue PinProcessorJob for pin #{@pin.id}: #{e.message}")
+    @pin.update(
+      processing_status: "failed",
+      metadata: (@pin.metadata || {}).merge("processing_error" => e.message)
+    )
   end
 end
