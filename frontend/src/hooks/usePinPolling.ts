@@ -16,13 +16,17 @@ export function usePinPolling(
   options: UsePinPollingOptions = {}
 ) {
   const { onComplete, onFailed, pollingInterval = 2000 } = options;
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
 
   const [pin, setPin] = useState<Pin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchPin = useCallback(async () => {
+    if (!isLoaded) {
+      return null;
+    }
+
     try {
       const token = await getToken();
       if (!token) {
@@ -49,16 +53,20 @@ export function usePinPolling(
     } finally {
       setIsLoading(false);
     }
-  }, [pinId, getToken, onComplete, onFailed]);
+  }, [pinId, getToken, isLoaded, onComplete, onFailed]);
 
   useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
     let intervalId: NodeJS.Timeout | null = null;
     let isMounted = true;
 
     const startPolling = async () => {
       const data = await fetchPin();
 
-      if (!isMounted) return;
+      if (!isMounted || !data) return;
 
       const isTerminalState =
         data.processing_status === 'complete' ||
@@ -67,6 +75,8 @@ export function usePinPolling(
       if (!isTerminalState) {
         intervalId = setInterval(async () => {
           const updatedData = await fetchPin();
+          if (!updatedData) return;
+
           const isNowTerminal =
             updatedData.processing_status === 'complete' ||
             updatedData.processing_status === 'failed';
@@ -89,7 +99,7 @@ export function usePinPolling(
         clearInterval(intervalId);
       }
     };
-  }, [pinId, pollingInterval, fetchPin]);
+  }, [pinId, pollingInterval, fetchPin, isLoaded]);
 
   const status: ProcessingStatus | null = pin?.processing_status || null;
   const isProcessing = status === 'processing' || status === 'pending';

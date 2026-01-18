@@ -6,13 +6,17 @@ import { Collection, CreateCollectionRequest, UpdateCollectionRequest } from '@/
 import { createClientCollectionsApi } from '@/lib/api/collections';
 
 export function useCollections() {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
 
   const [collections, setCollections] = useState<Collection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchCollections = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       const token = await getToken();
@@ -30,7 +34,7 @@ export function useCollections() {
     } finally {
       setIsLoading(false);
     }
-  }, [getToken]);
+  }, [getToken, isLoaded]);
 
   useEffect(() => {
     fetchCollections();

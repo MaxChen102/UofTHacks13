@@ -6,13 +6,17 @@ import { Pin } from '@/lib/types/pin';
 import { createClientPinsApi } from '@/lib/api/pins';
 
 export function usePins(collectionId?: string) {
-  const { getToken } = useAuth();
+  const { getToken, isLoaded } = useAuth();
 
   const [pins, setPins] = useState<Pin[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchPins = useCallback(async () => {
+    if (!isLoaded) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       const token = await getToken();
@@ -31,7 +35,7 @@ export function usePins(collectionId?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [collectionId, getToken]);
+  }, [collectionId, getToken, isLoaded]);
 
   useEffect(() => {
     fetchPins();
