@@ -1,4 +1,4 @@
-# UofTHacks13
+# UofTHacks13: Vibely
 ## Inspiration
 Our identities are quietly shaped by the places we’re drawn to, even the ones we’ve never visited. Vibely started with a simple, familiar problem: thousands of forgotten screenshots from TikToks and Instagram Reels that capture a moment of curiosity (“I want to go there”) but rarely turn into an actual plan.
 
